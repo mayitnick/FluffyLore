@@ -662,7 +662,7 @@ function setupEventListeners() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'lore_project.json';
+    a.download = 'fluffylore_project.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -811,13 +811,13 @@ function saveToLocalStorage() {
       playSoundEnabled: state.playSoundEnabled,
       playSoundName: state.playSoundName
     };
-    localStorage.setItem('lorehelper_state', JSON.stringify(data));
+    localStorage.setItem('fluffylore_state', JSON.stringify(data));
   } catch (e) {}
 }
 
 function loadFromLocalStorage() {
   try {
-    const saved = localStorage.getItem('lorehelper_state');
+    const saved = localStorage.getItem('fluffylore_state') || localStorage.getItem('lorehelper_state');
     if (!saved) return;
     const data = JSON.parse(saved);
     if (data.script !== undefined) els.scriptInput.value = data.script;

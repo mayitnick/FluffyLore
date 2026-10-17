@@ -1,5 +1,5 @@
 """
-Скрипт сборки автономного Single-File HTML документа LoreHelper_Standalone.html
+Скрипт сборки автономного Single-File HTML документа FluffyLore_Standalone.html
 Объединяет index.html, style.css и app.js в единый файл без внешних зависимостей.
 """
 import os
@@ -10,7 +10,7 @@ def build():
     html_path = os.path.join(base_dir, "index.html")
     css_path = os.path.join(base_dir, "style.css")
     js_path = os.path.join(base_dir, "app.js")
-    out_path = os.path.join(base_dir, "LoreHelper_Standalone.html")
+    out_path = os.path.join(base_dir, "FluffyLore_Standalone.html")
 
     with open(html_path, "r", encoding="utf-8") as f:
         html = f.read()

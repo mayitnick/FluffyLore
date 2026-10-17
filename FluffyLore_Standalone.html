@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LoreHelper — Редактор диалогов и Tellraw для Minecraft</title>
+  <title>FluffyLore — Пушистый редактор диалогов и Tellraw для Minecraft</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
   <style>
-/* === LoreHelper Modern Minecraft Editor Theme === */
+/* === FluffyLore — Modern Minecraft Dialogue & Tellraw Editor Theme === */
 :root {
   --bg-main: #0f1013;
   --bg-card: #17191e;
@@ -690,8 +690,8 @@ body {
     <div class="logo-area">
       <span class="logo-icon">🦊</span>
       <div class="logo-text">
-        <h1 class="logo-title">LoreHelper <span class="logo-badge">Minecraft 1.16–1.21+</span></h1>
-        <p class="logo-subtitle">Удобный редактор диалогов и генератор /tellraw команд</p>
+        <h1 class="logo-title">FluffyLore <span class="logo-badge">Minecraft 1.16–1.21+</span></h1>
+        <p class="logo-subtitle">Пушистый редактор диалогов и генератор /tellraw команд</p>
       </div>
     </div>
     <div class="header-actions">
@@ -1522,7 +1522,7 @@ function setupEventListeners() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'lore_project.json';
+    a.download = 'fluffylore_project.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1671,13 +1671,13 @@ function saveToLocalStorage() {
       playSoundEnabled: state.playSoundEnabled,
       playSoundName: state.playSoundName
     };
-    localStorage.setItem('lorehelper_state', JSON.stringify(data));
+    localStorage.setItem('fluffylore_state', JSON.stringify(data));
   } catch (e) {}
 }
 
 function loadFromLocalStorage() {
   try {
-    const saved = localStorage.getItem('lorehelper_state');
+    const saved = localStorage.getItem('fluffylore_state') || localStorage.getItem('lorehelper_state');
     if (!saved) return;
     const data = JSON.parse(saved);
     if (data.script !== undefined) els.scriptInput.value = data.script;
