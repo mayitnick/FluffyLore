@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoreHelper — Редактор диалогов и Tellraw для Minecraft</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Шапка приложения -->
+  <header class="app-header">
+    <div class="logo-area">
+      <span class="logo-icon">🦊</span>
+      <div class="logo-text">
+        <h1 class="logo-title">LoreHelper <span class="logo-badge">Minecraft 1.16–1.21+</span></h1>
+        <p class="logo-subtitle">Удобный редактор диалогов и генератор /tellraw команд</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить пример диалога">
+        <span>✨ Пример</span>
+      </button>
+      <button class="btn btn-secondary btn-sm" id="btn-export-project" title="Экспорт проекта в JSON файл">
+        <span>💾 Сохранить проект</span>
+      </button>
+      <label class="btn btn-secondary btn-sm file-label" title="Загрузить проект из файла">
+        <span>📂 Загрузить</span>
+        <input type="file" id="file-import-project" accept=".json" style="display:none;">
+      </label>
+      <button class="btn btn-outline btn-sm" id="btn-clear-all" title="Очистить редактор">
+        <span>🗑️ Очистить</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Главное рабочее пространство -->
+  <main class="workspace" id="workspace">
+    <!-- Левая колонка: Ввод сценария -->
+    <section class="panel panel-left" id="panel-left">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="icon">📝</span>
+          <h2>Сценарий диалогов</h2>
+          <span class="badge" id="line-count-badge">0 строк</span>
+        </div>
+        <div class="panel-tools">
+          <span class="hint-text">Формат: <code>Персонаж: реплика</code> или <code>*действие*</code></span>
+        </div>
+      </div>
+      <div class="editor-container">
+        <div class="line-numbers" id="line-numbers">1</div>
+        <textarea id="script-input" spellcheck="false" placeholder="Пишите ваш диалог здесь, например:
+
+Сенко: Добро пожаловать домой, Вай! Чай уже готов~
+Вай: Спасибо, Сенко! Как прошёл день?
+*На плите уютно шумит чайник с жасминовым чаем*
+Сенко: Всё чудесно! Садись скорее, я приготовила жареный тофу!"></textarea>
+      </div>
+      <div class="panel-footer-info">
+        <span>💡 Поддерживаются цветовые коды (<code>&6</code>, <code>&l</code>, <code>&#ffaa00</code>) прямо в тексте</span>
+      </div>
+    </section>
+
+    <!-- Вертикальный разделитель между левой и правой частью -->
+    <div class="resizer-horizontal" id="resizer-main" title="Потяните для изменения ширины"></div>
+
+    <!-- Правая колонка: Сверху правила замен, снизу экспорт tellraw -->
+    <section class="panel panel-right" id="panel-right">
+      
+      <!-- Правая верхняя часть: Персонажи и правила замен -->
+      <div class="panel-section panel-rules" id="panel-rules">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="icon">🎭</span>
+            <h2>Персонажи и стили замен</h2>
+            <span class="badge" id="char-count-badge">0 персонажей</span>
+          </div>
+          <div class="panel-tools">
+            <button class="btn btn-primary btn-sm" id="btn-add-character">
+              <span>➕ Добавить персонажа</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Быстрая цветовая палитра Minecraft -->
+        <div class="color-palette-bar">
+          <span class="palette-label">Палитра цветов Minecraft:</span>
+          <div class="palette-colors" id="palette-colors">
+            <!-- Генерируется динамически через JS -->
+          </div>
+          <div class="palette-formats" id="palette-formats">
+            <!-- Стили форматирования &l, &o и т.д. -->
+          </div>
+          <div class="hex-picker-wrap" title="Выбрать кастомный HEX цвет для версий 1.16+">
+            <input type="color" id="hex-color-picker" value="#ffaa00">
+            <button class="btn btn-secondary btn-xs" id="btn-insert-hex">Вставить HEX</button>
+          </div>
+        </div>
+
+        <!-- Список правил персонажей -->
+        <div class="character-rules-list" id="character-rules-list">
+          <!-- Карточки персонажей рендерятся тут -->
+        </div>
+
+        <!-- Живое игровое превью чата Minecraft -->
+        <div class="mc-preview-box">
+          <div class="mc-preview-header">
+            <span>🎮 Игровое превью чата Minecraft:</span>
+            <span class="mc-preview-subhint">Точный вид в игре (пиксельный шрифт и цвета)</span>
+          </div>
+          <div class="mc-chat-screen" id="mc-chat-screen">
+            <div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Горизонтальный разделитель между верхней и нижней панелью справа -->
+      <div class="resizer-vertical" id="resizer-sub" title="Потяните для изменения высоты"></div>
+
+      <!-- Правая нижняя часть: Экспорт Tellraw -->
+      <div class="panel-section panel-export" id="panel-export">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="icon">⚡</span>
+            <h2>Экспорт команд Tellraw</h2>
+            <span class="badge badge-accent" id="command-count-badge">0 команд</span>
+          </div>
+          <div class="export-options-bar">
+            <!-- Селектор -->
+            <div class="option-item">
+              <label for="export-selector">Селектор:</label>
+              <select id="export-selector" class="select-sm">
+                <option value="@a">@a (всем игрокам)</option>
+                <option value="@p">@p (ближайшему)</option>
+                <option value="@s">@s (вызывающему)</option>
+                <option value="@r">@r (случайному)</option>
+                <option value="custom">Свой селектор...</option>
+              </select>
+              <input type="text" id="custom-selector-input" class="input-sm" placeholder="@a[distance=..10]" style="display:none; width: 140px;">
+            </div>
+
+            <!-- Режим команды -->
+            <div class="option-item">
+              <label for="export-format">Формат:</label>
+              <select id="export-format" class="select-sm">
+                <option value="tellraw">Команда /tellraw</option>
+                <option value="json">Чистый JSON массив</option>
+                <option value="legacy">С параграфами (§-коды)</option>
+              </select>
+            </div>
+
+            <!-- Опция звука -->
+            <div class="option-item">
+              <label class="checkbox-label" title="Добавлять /playsound перед каждой репликой диалога">
+                <input type="checkbox" id="chk-playsound">
+                <span>Со звуком</span>
+              </label>
+              <input type="text" id="playsound-input" class="input-sm" value="entity.experience_orb.pickup" placeholder="minecraft:sound" style="display:none; width: 180px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="export-actions-row">
+          <button class="btn btn-success btn-sm" id="btn-copy-all">
+            <span>📋 Скопировать все команды</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btn-download-mcfunction">
+            <span>💾 Скачать .mcfunction</span>
+          </button>
+          <span class="copy-status-tip" id="copy-status-tip"></span>
+        </div>
+
+        <!-- Поле вывода команд -->
+        <div class="output-container">
+          <pre class="export-code" id="export-code-output"></pre>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
