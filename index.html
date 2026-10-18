@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FluffyLore — Пушистый редактор диалогов и Tellraw для Minecraft</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
+  <!-- Подключение пиксельного шрифта Minecraft с поддержкой кириллицы и латиницы -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/minecraft-4" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,8 +23,8 @@
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить пример диалога">
-        <span>✨ Пример</span>
+      <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить милый пример диалога Сенко и Широ">
+        <span>✨ Пример (Сенко и Широ)</span>
       </button>
       <button class="btn btn-secondary btn-sm" id="btn-export-project" title="Экспорт проекта в JSON файл">
         <span>💾 Сохранить проект</span>
@@ -52,95 +57,208 @@
         <div class="line-numbers" id="line-numbers">1</div>
         <textarea id="script-input" spellcheck="false" placeholder="Пишите ваш диалог здесь, например:
 
-Сенко: Добро пожаловать домой, Вай! Чай уже готов~
-Вай: Спасибо, Сенко! Как прошёл день?
-*На плите уютно шумит чайник с жасминовым чаем*
-Сенко: Всё чудесно! Садись скорее, я приготовила жареный тофу!"></textarea>
+Широ: Эй, Сенко! Смотри, как великая богиня Широ умеет повелевать молниями!
+Сенко: Широ-сама, пожалуйста, поосторожнее! Вы же разобьёте сервиз для чая~
+*Широ с гордым видом складывает руки на груди и виляет белым пушистым хвостом*
+Широ: Хмф! Ладно-ладно, если ты угостишь меня тем вкуснейшим жареным тофу, я буду паинькой!
+Сенко: Хи-хи, уже накрыто на стол. Приятного аппетита!"></textarea>
       </div>
       <div class="panel-footer-info">
         <span>💡 Поддерживаются цветовые коды (<code>&6</code>, <code>&l</code>, <code>&#ffaa00</code>) прямо в тексте</span>
+        <span class="font-license-link"><a href="https://fontlibrary.org/en/font/minecraftia" target="_blank" rel="noopener">Лицензия шрифта (OFL)</a></span>
       </div>
     </section>
 
     <!-- Вертикальный разделитель между левой и правой частью -->
     <div class="resizer-horizontal" id="resizer-main" title="Потяните для изменения ширины"></div>
 
-    <!-- Правая колонка: Сверху правила замен, снизу экспорт tellraw -->
+    <!-- Правая колонка -->
     <section class="panel panel-right" id="panel-right">
       
-      <!-- Правая верхняя часть: Персонажи и правила замен -->
-      <div class="panel-section panel-rules" id="panel-rules">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="icon">🎭</span>
-            <h2>Персонажи и стили замен</h2>
-            <span class="badge" id="char-count-badge">0 персонажей</span>
+      <!-- Правая верхняя часть: Вкладки (Персонажи / Настройка Селектора) -->
+      <div class="panel-section panel-top-section" id="panel-top-section">
+        <div class="tabs-header">
+          <div class="tabs-list">
+            <button class="tab-btn active" data-tab="tab-chars" id="tab-btn-chars">
+              <span class="icon">🎭</span> Персонажи и замена
+              <span class="tab-badge" id="char-count-badge">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-selector" id="tab-btn-selector">
+              <span class="icon">🎯</span> Чуткая настройка селектора
+            </button>
           </div>
-          <div class="panel-tools">
-            <button class="btn btn-primary btn-sm" id="btn-add-character">
+          <div class="tabs-actions">
+            <button class="btn btn-primary btn-xs" id="btn-add-character">
               <span>➕ Добавить персонажа</span>
             </button>
           </div>
         </div>
 
-        <!-- Быстрая цветовая палитра Minecraft -->
-        <div class="color-palette-bar">
-          <span class="palette-label">Палитра цветов Minecraft:</span>
-          <div class="palette-colors" id="palette-colors">
-            <!-- Генерируется динамически через JS -->
+        <!-- Контент вкладки 1: Персонажи -->
+        <div class="tab-content active" id="tab-chars">
+          <!-- Быстрая цветовая палитра Minecraft -->
+          <div class="color-palette-bar">
+            <span class="palette-label">Палитра цветов Minecraft:</span>
+            <div class="palette-colors" id="palette-colors"></div>
+            <div class="palette-formats" id="palette-formats"></div>
+            <div class="hex-picker-wrap" title="Выбрать кастомный HEX цвет (&#rrggbb)">
+              <input type="color" id="hex-color-picker" value="#ffaa00">
+              <button class="btn btn-secondary btn-xs" id="btn-insert-hex">Вставить &#HEX</button>
+            </div>
           </div>
-          <div class="palette-formats" id="palette-formats">
-            <!-- Стили форматирования &l, &o и т.д. -->
-          </div>
-          <div class="hex-picker-wrap" title="Выбрать кастомный HEX цвет для версий 1.16+">
-            <input type="color" id="hex-color-picker" value="#ffaa00">
-            <button class="btn btn-secondary btn-xs" id="btn-insert-hex">Вставить HEX</button>
+
+          <!-- Список правил персонажей -->
+          <div class="character-rules-list" id="character-rules-list"></div>
+        </div>
+
+        <!-- Контент вкладки 2: Конструктор селектора Minecraft -->
+        <div class="tab-content" id="tab-selector">
+          <div class="selector-builder-container">
+            <div class="selector-builder-intro">
+              <p>Настройте условия, кому адресованы диалоги: всей карте, игрокам с определённым квестовым тегом или в заданном радиусе.</p>
+            </div>
+
+            <div class="selector-grid">
+              <!-- Базовая цель -->
+              <div class="builder-field">
+                <label>Базовый тип цели:</label>
+                <select id="sel-base-target" class="select-sm">
+                  <option value="@a">@a — Всем игрокам</option>
+                  <option value="@p">@p — Ближайшему игроку</option>
+                  <option value="@s">@s — Текущему / вызывающему (@s)</option>
+                  <option value="@r">@r — Случайному игроку</option>
+                  <option value="player">Конкретный ник игрока</option>
+                </select>
+              </div>
+
+              <!-- Ник игрока (если выбран 'player') -->
+              <div class="builder-field" id="wrap-player-name" style="display:none;">
+                <label>Никнейм игрока:</label>
+                <input type="text" id="sel-player-name" class="input-sm" placeholder="Steve">
+              </div>
+
+              <!-- Тег -->
+              <div class="builder-field">
+                <label>Тег игрока (tag=...):</label>
+                <input type="text" id="sel-tag" class="input-sm" placeholder="quest_act1 (можно без 'tag=')">
+              </div>
+
+              <!-- Дистанция -->
+              <div class="builder-field">
+                <label>Дистанция (distance=...):</label>
+                <input type="text" id="sel-distance" class="input-sm" placeholder="..15 или 5..30">
+              </div>
+
+              <!-- Лимит игроков -->
+              <div class="builder-field">
+                <label>Лимит (limit=...):</label>
+                <input type="number" id="sel-limit" class="input-sm" placeholder="1" min="1">
+              </div>
+
+              <!-- Сортировка -->
+              <div class="builder-field">
+                <label>Сортировка (sort=...):</label>
+                <select id="sel-sort" class="select-sm">
+                  <option value="">(По умолчанию)</option>
+                  <option value="nearest">nearest (ближайшие)</option>
+                  <option value="furthest">furthest (дальние)</option>
+                  <option value="random">random (случайный порядок)</option>
+                  <option value="arbitrary">arbitrary (произвольный)</option>
+                </select>
+              </div>
+
+              <!-- Команда -->
+              <div class="builder-field">
+                <label>Команда (team=...):</label>
+                <input type="text" id="sel-team" class="input-sm" placeholder="red / hunters">
+              </div>
+
+              <!-- Режим игры -->
+              <div class="builder-field">
+                <label>Режим игры (gamemode=...):</label>
+                <select id="sel-gamemode" class="select-sm">
+                  <option value="">(Любой)</option>
+                  <option value="adventure">adventure (приключение)</option>
+                  <option value="survival">survival (выживание)</option>
+                  <option value="creative">creative (творческий)</option>
+                  <option value="spectator">spectator (наблюдатель)</option>
+                </select>
+              </div>
+
+              <!-- Кастомные аргументы -->
+              <div class="builder-field span-2">
+                <label>Дополнительные аргументы селектора (NBT / координаты):</label>
+                <input type="text" id="sel-custom-args" class="input-sm" placeholder="x=100,y=64,z=-200,dx=10,dy=5,dz=10">
+              </div>
+            </div>
+
+            <!-- Итоговый селектор -->
+            <div class="selector-result-bar">
+              <span class="label">Итоговый селектор:</span>
+              <code id="selector-result-preview">@a</code>
+              <button class="btn btn-secondary btn-xs" id="btn-copy-selector" title="Скопировать селектор">📋 Копировать</button>
+              <label class="use-builder-checkbox">
+                <input type="checkbox" id="chk-use-builder-selector" checked>
+                <span>Использовать этот селектор для Tellraw</span>
+              </label>
+            </div>
           </div>
         </div>
 
-        <!-- Список правил персонажей -->
-        <div class="character-rules-list" id="character-rules-list">
-          <!-- Карточки персонажей рендерятся тут -->
-        </div>
-
-        <!-- Живое игровое превью чата Minecraft -->
-        <div class="mc-preview-box">
-          <div class="mc-preview-header">
-            <span>🎮 Игровое превью чата Minecraft:</span>
-            <span class="mc-preview-subhint">Точный вид в игре (пиксельный шрифт и цвета)</span>
-          </div>
-          <div class="mc-chat-screen" id="mc-chat-screen">
-            <div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>
-          </div>
-        </div>
       </div>
 
       <!-- Горизонтальный разделитель между верхней и нижней панелью справа -->
       <div class="resizer-vertical" id="resizer-sub" title="Потяните для изменения высоты"></div>
 
-      <!-- Правая нижняя часть: Экспорт Tellraw -->
-      <div class="panel-section panel-export" id="panel-export">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="icon">⚡</span>
-            <h2>Экспорт команд Tellraw</h2>
-            <span class="badge badge-accent" id="command-count-badge">0 команд</span>
+      <!-- Правая нижняя часть: Вкладки (Превью чата / Экспорт Tellraw) -->
+      <div class="panel-section panel-bottom-section" id="panel-bottom-section">
+        <div class="tabs-header">
+          <div class="tabs-list">
+            <button class="tab-btn active" data-tab="tab-preview" id="tab-btn-preview">
+              <span class="icon">🎮</span> Превью чата Minecraft
+            </button>
+            <button class="tab-btn" data-tab="tab-export" id="tab-btn-export">
+              <span class="icon">⚡</span> Экспорт Tellraw
+              <span class="tab-badge badge-accent" id="command-count-badge">0 команд</span>
+            </button>
           </div>
-          <div class="export-options-bar">
-            <!-- Селектор -->
-            <div class="option-item">
-              <label for="export-selector">Селектор:</label>
-              <select id="export-selector" class="select-sm">
-                <option value="@a">@a (всем игрокам)</option>
-                <option value="@p">@p (ближайшему)</option>
-                <option value="@s">@s (вызывающему)</option>
-                <option value="@r">@r (случайному)</option>
-                <option value="custom">Свой селектор...</option>
-              </select>
-              <input type="text" id="custom-selector-input" class="input-sm" placeholder="@a[distance=..10]" style="display:none; width: 140px;">
-            </div>
+          
+          <!-- Управление для превью чата -->
+          <div class="preview-controls-bar" id="preview-controls-bar">
+            <span class="ctrl-label">Фон:</span>
+            <select id="chat-bg-mode" class="select-xs">
+              <option value="world">Мир Minecraft 🌳</option>
+              <option value="dark">Тёмный фон 🌙</option>
+              <option value="black">Чистый чёрный ⬛</option>
+            </select>
+            <span class="ctrl-label">Непрозрачность:</span>
+            <input type="range" id="chat-opacity-slider" min="20" max="100" value="65" class="range-slider">
+            <span id="chat-opacity-val" class="opacity-val-text">65%</span>
+          </div>
 
-            <!-- Режим команды -->
+          <!-- Кнопки для экспорта -->
+          <div class="export-controls-bar" id="export-controls-bar" style="display:none;">
+            <button class="btn btn-success btn-xs" id="btn-copy-all">
+              <span>📋 Скопировать всё</span>
+            </button>
+            <button class="btn btn-secondary btn-xs" id="btn-download-mcfunction">
+              <span>💾 .mcfunction</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Контент вкладки 1: Игровой чат Minecraft -->
+        <div class="tab-content active" id="tab-preview">
+          <div class="mc-viewport" id="mc-viewport">
+            <div class="mc-chat-screen-full" id="mc-chat-screen">
+              <div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Контент вкладки 2: Экспорт Tellraw -->
+        <div class="tab-content" id="tab-export">
+          <div class="export-sub-toolbar">
             <div class="option-item">
               <label for="export-format">Формат:</label>
               <select id="export-format" class="select-sm">
@@ -150,31 +268,43 @@
               </select>
             </div>
 
+            <!-- Формат HEX цвета -->
+            <div class="option-item">
+              <label for="hex-format-select" title="Стиль записи hex цвета в JSON">HEX в Tellraw:</label>
+              <select id="hex-format-select" class="select-sm">
+                <option value="no-hash">Без # (color: "ffaa00")</option>
+                <option value="hash">С # (color: "#ffaa00")</option>
+              </select>
+            </div>
+
+            <!-- Селектор (если выключен селектор из конструктора) -->
+            <div class="option-item" id="manual-selector-wrap" style="display:none;">
+              <label for="export-selector">Селектор:</label>
+              <select id="export-selector" class="select-sm">
+                <option value="@a">@a</option>
+                <option value="@p">@p</option>
+                <option value="@s">@s</option>
+                <option value="@r">@r</option>
+              </select>
+            </div>
+
             <!-- Опция звука -->
             <div class="option-item">
               <label class="checkbox-label" title="Добавлять /playsound перед каждой репликой диалога">
                 <input type="checkbox" id="chk-playsound">
                 <span>Со звуком</span>
               </label>
-              <input type="text" id="playsound-input" class="input-sm" value="entity.experience_orb.pickup" placeholder="minecraft:sound" style="display:none; width: 180px;">
+              <input type="text" id="playsound-input" class="input-sm" value="entity.experience_orb.pickup" placeholder="minecraft:sound" style="display:none; width: 170px;">
             </div>
+
+            <span class="copy-status-tip" id="copy-status-tip"></span>
+          </div>
+
+          <div class="output-container">
+            <pre class="export-code" id="export-code-output"></pre>
           </div>
         </div>
 
-        <div class="export-actions-row">
-          <button class="btn btn-success btn-sm" id="btn-copy-all">
-            <span>📋 Скопировать все команды</span>
-          </button>
-          <button class="btn btn-secondary btn-sm" id="btn-download-mcfunction">
-            <span>💾 Скачать .mcfunction</span>
-          </button>
-          <span class="copy-status-tip" id="copy-status-tip"></span>
-        </div>
-
-        <!-- Поле вывода команд -->
-        <div class="output-container">
-          <pre class="export-code" id="export-code-output"></pre>
-        </div>
       </div>
 
     </section>

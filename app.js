@@ -1,5 +1,5 @@
 /**
- * LoreHelper — Инженерное ядро редактора диалогов и компилятора Tellraw
+ * FluffyLore — Инженерное ядро редактора диалогов и компилятора Tellraw
  */
 
 // Константы цветов Minecraft
@@ -32,6 +32,12 @@ const MC_FORMATS = {
   'r': { name: 'reset', label: '&r Сброс' }
 };
 
+const DEFAULT_SAMPLE_DIALOGUE = `Широ: Эй, Сенко! Смотри, как великая богиня Широ умеет повелевать молниями!
+Сенко: Широ-сама, пожалуйста, поосторожнее! Вы же разобьёте сервиз для чая~
+*Широ с гордым видом складывает руки на груди и виляет белым пушистым хвостом*
+Широ: Хмф! Ладно-ладно, если ты угостишь меня тем вкуснейшим жареным тофу, я буду паинькой!
+Сенко: Хи-хи, уже накрыто на стол. Приятного аппетита!`;
+
 // Состояние приложения
 const state = {
   characters: [
@@ -45,11 +51,11 @@ const state = {
       enabled: true
     },
     {
-      id: 'char_vay',
-      trigger: 'Вай',
-      displayName: '&b&lВай',
+      id: 'char_shiro',
+      trigger: 'Широ',
+      displayName: '&f&lШиро',
       separator: ': ',
-      msgColor: '&f',
+      msgColor: '&b',
       prefix: '',
       enabled: true
     },
@@ -64,52 +70,112 @@ const state = {
     }
   ],
   selector: '@a',
-  customSelector: '',
+  useBuilderSelector: true,
+  builderSelector: {
+    base: '@a',
+    player: '',
+    tag: '',
+    distance: '',
+    limit: '',
+    sort: '',
+    team: '',
+    gamemode: '',
+    custom: ''
+  },
+  hexFormat: 'no-hash', // 'no-hash' (ffaa00) | 'hash' (#ffaa00)
+  chatBgMode: 'world',  // 'world' | 'dark' | 'black'
+  chatOpacity: 65,      // 20..100
   format: 'tellraw',
   playSoundEnabled: false,
   playSoundName: 'entity.experience_orb.pickup',
-  lastFocusedInput: null
+  lastFocusedInput: null,
+  activeUpperTab: 'tab-chars',
+  activeLowerTab: 'tab-preview'
 };
 
 // DOM Элементы
-const els = {
-  scriptInput: document.getElementById('script-input'),
-  lineNumbers: document.getElementById('line-numbers'),
-  lineCountBadge: document.getElementById('line-count-badge'),
-  charCountBadge: document.getElementById('char-count-badge'),
-  commandCountBadge: document.getElementById('command-count-badge'),
-  charRulesList: document.getElementById('character-rules-list'),
-  mcChatScreen: document.getElementById('mc-chat-screen'),
-  exportCodeOutput: document.getElementById('export-code-output'),
-  paletteColors: document.getElementById('palette-colors'),
-  paletteFormats: document.getElementById('palette-formats'),
-  hexColorPicker: document.getElementById('hex-color-picker'),
-  btnInsertHex: document.getElementById('btn-insert-hex'),
-  btnAddCharacter: document.getElementById('btn-add-character'),
-  exportSelector: document.getElementById('export-selector'),
-  customSelectorInput: document.getElementById('custom-selector-input'),
-  exportFormat: document.getElementById('export-format'),
-  chkPlaysound: document.getElementById('chk-playsound'),
-  playsoundInput: document.getElementById('playsound-input'),
-  btnCopyAll: document.getElementById('btn-copy-all'),
-  btnDownloadMcfunction: document.getElementById('btn-download-mcfunction'),
-  copyStatusTip: document.getElementById('copy-status-tip'),
-  btnSampleData: document.getElementById('btn-sample-data'),
-  btnExportProject: document.getElementById('btn-export-project'),
-  fileImportProject: document.getElementById('file-import-project'),
-  btnClearAll: document.getElementById('btn-clear-all'),
-  resizerMain: document.getElementById('resizer-main'),
-  resizerSub: document.getElementById('resizer-sub'),
-  panelLeft: document.getElementById('panel-left'),
-  panelRules: document.getElementById('panel-rules'),
-  workspace: document.getElementById('workspace')
-};
+let els = {};
+
+function initDomRefs() {
+  els = {
+    scriptInput: document.getElementById('script-input'),
+    lineNumbers: document.getElementById('line-numbers'),
+    lineCountBadge: document.getElementById('line-count-badge'),
+    charCountBadge: document.getElementById('char-count-badge'),
+    commandCountBadge: document.getElementById('command-count-badge'),
+    charRulesList: document.getElementById('character-rules-list'),
+    mcViewport: document.getElementById('mc-viewport'),
+    mcChatScreen: document.getElementById('mc-chat-screen'),
+    exportCodeOutput: document.getElementById('export-code-output'),
+    paletteColors: document.getElementById('palette-colors'),
+    paletteFormats: document.getElementById('palette-formats'),
+    hexColorPicker: document.getElementById('hex-color-picker'),
+    btnInsertHex: document.getElementById('btn-insert-hex'),
+    btnAddCharacter: document.getElementById('btn-add-character'),
+    exportSelector: document.getElementById('export-selector'),
+    exportFormat: document.getElementById('export-format'),
+    hexFormatSelect: document.getElementById('hex-format-select'),
+    manualSelectorWrap: document.getElementById('manual-selector-wrap'),
+    chkPlaysound: document.getElementById('chk-playsound'),
+    playsoundInput: document.getElementById('playsound-input'),
+    btnCopyAll: document.getElementById('btn-copy-all'),
+    btnDownloadMcfunction: document.getElementById('btn-download-mcfunction'),
+    copyStatusTip: document.getElementById('copy-status-tip'),
+    btnSampleData: document.getElementById('btn-sample-data'),
+    btnExportProject: document.getElementById('btn-export-project'),
+    fileImportProject: document.getElementById('file-import-project'),
+    btnClearAll: document.getElementById('btn-clear-all'),
+    resizerMain: document.getElementById('resizer-main'),
+    resizerSub: document.getElementById('resizer-sub'),
+    panelLeft: document.getElementById('panel-left'),
+    panelTopSection: document.getElementById('panel-top-section'),
+    workspace: document.getElementById('workspace'),
+    
+    // Вкладки
+    tabBtnChars: document.getElementById('tab-btn-chars'),
+    tabBtnSelector: document.getElementById('tab-btn-selector'),
+    tabChars: document.getElementById('tab-chars'),
+    tabSelector: document.getElementById('tab-selector'),
+    tabBtnPreview: document.getElementById('tab-btn-preview'),
+    tabBtnExport: document.getElementById('tab-btn-export'),
+    tabPreview: document.getElementById('tab-preview'),
+    tabExport: document.getElementById('tab-export'),
+    previewControlsBar: document.getElementById('preview-controls-bar'),
+    exportControlsBar: document.getElementById('export-controls-bar'),
+    
+    // Селектор конструктор
+    selBaseTarget: document.getElementById('sel-base-target'),
+    wrapPlayerName: document.getElementById('wrap-player-name'),
+    selPlayerName: document.getElementById('sel-player-name'),
+    selTag: document.getElementById('sel-tag'),
+    selDistance: document.getElementById('sel-distance'),
+    selLimit: document.getElementById('sel-limit'),
+    selSort: document.getElementById('sel-sort'),
+    selTeam: document.getElementById('sel-team'),
+    selGamemode: document.getElementById('sel-gamemode'),
+    selCustomArgs: document.getElementById('sel-custom-args'),
+    selectorResultPreview: document.getElementById('selector-result-preview'),
+    btnCopySelector: document.getElementById('btn-copy-selector'),
+    chkUseBuilderSelector: document.getElementById('chk-use-builder-selector'),
+
+    // Чат контролы
+    chatBgMode: document.getElementById('chat-bg-mode'),
+    chatOpacitySlider: document.getElementById('chat-opacity-slider'),
+    chatOpacityVal: document.getElementById('chat-opacity-val')
+  };
+}
 
 // --- Инициализация интерфейса ---
 function init() {
+  initDomRefs();
   buildColorPalette();
   loadFromLocalStorage();
+  applyChatViewportControls();
   renderCharacterRules();
+  computeSelector();
+  setupTabs();
+  setupSelectorBuilderEvents();
+  setupChatControls();
   setupEventListeners();
   setupResizers();
   updateEditor();
@@ -158,12 +224,240 @@ function insertCodeAtCursor(code) {
   target.selectionStart = target.selectionEnd = start + code.length;
   target.focus();
 
-  // Вызываем обновление
   if (target === els.scriptInput) {
     updateEditor();
   } else {
     target.dispatchEvent(new Event('input', { bubbles: true }));
   }
+}
+
+// --- Управление вкладками ---
+function setupTabs() {
+  // Верхние вкладки
+  const upperTabs = [
+    { btn: els.tabBtnChars, content: els.tabChars, id: 'tab-chars' },
+    { btn: els.tabBtnSelector, content: els.tabSelector, id: 'tab-selector' }
+  ];
+
+  upperTabs.forEach(tab => {
+    if (!tab.btn) return;
+    tab.btn.addEventListener('click', () => {
+      upperTabs.forEach(t => {
+        t.btn.classList.toggle('active', t.id === tab.id);
+        t.content.classList.toggle('active', t.id === tab.id);
+      });
+      state.activeUpperTab = tab.id;
+      saveToLocalStorage();
+    });
+  });
+
+  // Нижние вкладки
+  const lowerTabs = [
+    { btn: els.tabBtnPreview, content: els.tabPreview, id: 'tab-preview' },
+    { btn: els.tabBtnExport, content: els.tabExport, id: 'tab-export' }
+  ];
+
+  lowerTabs.forEach(tab => {
+    if (!tab.btn) return;
+    tab.btn.addEventListener('click', () => {
+      lowerTabs.forEach(t => {
+        t.btn.classList.toggle('active', t.id === tab.id);
+        t.content.classList.toggle('active', t.id === tab.id);
+      });
+      state.activeLowerTab = tab.id;
+      updateControlBarsVisibility();
+      saveToLocalStorage();
+    });
+  });
+
+  updateControlBarsVisibility();
+}
+
+function updateControlBarsVisibility() {
+  if (state.activeLowerTab === 'tab-preview') {
+    if (els.previewControlsBar) els.previewControlsBar.style.display = 'flex';
+    if (els.exportControlsBar) els.exportControlsBar.style.display = 'none';
+  } else {
+    if (els.previewControlsBar) els.previewControlsBar.style.display = 'none';
+    if (els.exportControlsBar) els.exportControlsBar.style.display = 'flex';
+  }
+}
+
+// --- Конструктор селектора Minecraft ---
+function computeSelector() {
+  const base = els.selBaseTarget ? els.selBaseTarget.value : '@a';
+  const player = els.selPlayerName ? els.selPlayerName.value.trim() : '';
+  const tag = els.selTag ? els.selTag.value.trim() : '';
+  const distance = els.selDistance ? els.selDistance.value.trim() : '';
+  const limit = els.selLimit ? els.selLimit.value.trim() : '';
+  const sort = els.selSort ? els.selSort.value.trim() : '';
+  const team = els.selTeam ? els.selTeam.value.trim() : '';
+  const gamemode = els.selGamemode ? els.selGamemode.value.trim() : '';
+  const custom = els.selCustomArgs ? els.selCustomArgs.value.trim() : '';
+
+  state.builderSelector = { base, player, tag, distance, limit, sort, team, gamemode, custom };
+
+  let args = [];
+
+  if (tag) {
+    args.push(tag.startsWith('tag=') ? tag : `tag=${tag}`);
+  }
+  if (distance) {
+    args.push(distance.startsWith('distance=') ? distance : `distance=${distance}`);
+  }
+  if (limit) {
+    args.push(limit.startsWith('limit=') ? limit : `limit=${limit}`);
+  }
+  if (sort) {
+    args.push(`sort=${sort}`);
+  }
+  if (team) {
+    args.push(team.startsWith('team=') ? team : `team=${team}`);
+  }
+  if (gamemode) {
+    args.push(`gamemode=${gamemode}`);
+  }
+  if (custom) {
+    const customList = custom.split(',').map(s => s.trim()).filter(Boolean);
+    args.push(...customList);
+  }
+
+  let finalSelector = '@a';
+
+  if (base === 'player') {
+    if (args.length > 0) {
+      const nameArg = player ? `name=${player}` : '';
+      const allArgs = nameArg ? [nameArg, ...args] : args;
+      finalSelector = `@p[${allArgs.join(',')}]`;
+    } else {
+      finalSelector = player || 'Player';
+    }
+  } else {
+    if (args.length > 0) {
+      finalSelector = `${base}[${args.join(',')}]`;
+    } else {
+      finalSelector = base;
+    }
+  }
+
+  if (els.selectorResultPreview) {
+    els.selectorResultPreview.textContent = finalSelector;
+  }
+
+  return finalSelector;
+}
+
+function setupSelectorBuilderEvents() {
+  const inputs = [
+    els.selBaseTarget, els.selPlayerName, els.selTag, els.selDistance,
+    els.selLimit, els.selSort, els.selTeam, els.selGamemode, els.selCustomArgs
+  ];
+
+  inputs.forEach(input => {
+    if (!input) return;
+    input.addEventListener('input', () => {
+      computeSelector();
+      updateEditor();
+    });
+    input.addEventListener('change', () => {
+      computeSelector();
+      updateEditor();
+    });
+  });
+
+  if (els.selBaseTarget) {
+    els.selBaseTarget.addEventListener('change', () => {
+      const isPlayer = els.selBaseTarget.value === 'player';
+      if (els.wrapPlayerName) {
+        els.wrapPlayerName.style.display = isPlayer ? 'flex' : 'none';
+      }
+      computeSelector();
+      updateEditor();
+    });
+  }
+
+  if (els.btnCopySelector) {
+    els.btnCopySelector.addEventListener('click', async () => {
+      const sel = els.selectorResultPreview.textContent;
+      try {
+        await navigator.clipboard.writeText(sel);
+        showCopyToast(`📋 Селектор ${sel} скопирован!`);
+      } catch (err) {
+        const ta = document.createElement('textarea');
+        ta.value = sel;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showCopyToast(`📋 Селектор ${sel} скопирован!`);
+      }
+    });
+  }
+
+  if (els.chkUseBuilderSelector) {
+    els.chkUseBuilderSelector.addEventListener('change', (e) => {
+      state.useBuilderSelector = e.target.checked;
+      if (els.manualSelectorWrap) {
+        els.manualSelectorWrap.style.display = state.useBuilderSelector ? 'none' : 'flex';
+      }
+      updateEditor();
+    });
+  }
+}
+
+// --- Управление видовым экраном чата ---
+function setupChatControls() {
+  if (els.chatBgMode) {
+    els.chatBgMode.addEventListener('change', (e) => {
+      state.chatBgMode = e.target.value;
+      applyChatViewportControls();
+      saveToLocalStorage();
+    });
+  }
+
+  if (els.chatOpacitySlider) {
+    els.chatOpacitySlider.addEventListener('input', (e) => {
+      state.chatOpacity = parseInt(e.target.value, 10);
+      applyChatViewportControls();
+      saveToLocalStorage();
+    });
+  }
+
+  if (els.hexFormatSelect) {
+    els.hexFormatSelect.addEventListener('change', (e) => {
+      state.hexFormat = e.target.value;
+      updateEditor();
+    });
+  }
+}
+
+function applyChatViewportControls() {
+  if (els.mcViewport) {
+    els.mcViewport.classList.remove('bg-world', 'bg-dark', 'bg-black');
+    els.mcViewport.classList.add(`bg-${state.chatBgMode || 'world'}`);
+  }
+
+  if (els.mcChatScreen) {
+    const alpha = (state.chatOpacity || 65) / 100;
+    els.mcChatScreen.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
+  }
+
+  if (els.chatOpacityVal) {
+    els.chatOpacityVal.textContent = `${state.chatOpacity || 65}%`;
+  }
+  if (els.chatOpacitySlider) {
+    els.chatOpacitySlider.value = state.chatOpacity || 65;
+  }
+  if (els.chatBgMode) {
+    els.chatBgMode.value = state.chatBgMode || 'world';
+  }
+}
+
+function getEffectiveSelector() {
+  if (state.useBuilderSelector) {
+    return computeSelector();
+  }
+  return els.exportSelector ? els.exportSelector.value : '@a';
 }
 
 // --- Парсинг цветов и форматирования Minecraft ---
@@ -190,7 +484,7 @@ function parseMinecraftTokens(rawText, inheritedColor = null, inheritedFormats =
 
   let i = 0;
   while (i < rawText.length) {
-    // Проверка HEX формата &#rrggbb или #rrggbb
+    // Проверка HEX формата &#rrggbb
     if (rawText.startsWith('&#', i) && i + 8 <= rawText.length) {
       const hexCandidate = rawText.substr(i + 2, 6);
       if (/^[0-9a-fA-F]{6}$/.test(hexCandidate)) {
@@ -209,7 +503,6 @@ function parseMinecraftTokens(rawText, inheritedColor = null, inheritedFormats =
       if (MC_COLORS[code]) {
         flush();
         currentColor = MC_COLORS[code].name;
-        // В Minecraft выбор цвета сбрасывает текущие стили жирности/курсива
         currentFormats = {};
         i += 2;
         continue;
@@ -265,15 +558,27 @@ function tokensToHtml(tokens) {
   }).join('');
 }
 
+// Сериализация цвета для Tellraw JSON с учётом опции хэша
+function serializeTellrawColor(color) {
+  if (!color) return null;
+  if (color.startsWith('#')) {
+    const rawHex = color.substring(1).toLowerCase();
+    return state.hexFormat === 'hash' ? `#${rawHex}` : rawHex;
+  }
+  return color;
+}
+
 // Преобразование токенов в Minecraft Tellraw JSON структуру
 function tokensToTellrawJson(tokens) {
   if (!tokens || tokens.length === 0) return '[""]';
 
-  const parts = ['']; // Пустая строка в начале — стандарт безопасности tellraw
+  const parts = [''];
   tokens.forEach(tok => {
     if (!tok.text) return;
     const obj = { text: tok.text };
-    if (tok.color) obj.color = tok.color;
+    if (tok.color) {
+      obj.color = serializeTellrawColor(tok.color);
+    }
     if (tok.bold) obj.bold = true;
     if (tok.italic) obj.italic = true;
     if (tok.underlined) obj.underlined = true;
@@ -292,8 +597,11 @@ function tokensToLegacyString(tokens) {
     let prefix = '';
     if (tok.color) {
       const entry = Object.entries(MC_COLORS).find(([k, v]) => v.name === tok.color);
-      if (entry) prefix += `§${entry[0]}`;
-      else if (tok.color.startsWith('#')) prefix += `§x` + tok.color.slice(1).split('').map(c => `§${c}`).join('');
+      if (entry) {
+        prefix += `§${entry[0]}`;
+      } else if (tok.color.startsWith('#')) {
+        prefix += `§x` + tok.color.slice(1).split('').map(c => `§${c}`).join('');
+      }
     }
     if (tok.bold) prefix += '§l';
     if (tok.italic) prefix += '§o';
@@ -319,7 +627,7 @@ function processScriptLines(text) {
     let characterName = '';
     let speechText = rawLine;
 
-    // Проверяем авторскую ремарку в звездочках *действие*
+    // Авторская ремарка в звездочках *действие*
     if (rawLine.trim().startsWith('*') && rawLine.trim().endsWith('*') && rawLine.trim().length > 1) {
       const narratorRule = state.characters.find(c => c.trigger === '*' && c.enabled);
       if (narratorRule) {
@@ -327,12 +635,10 @@ function processScriptLines(text) {
         speechText = rawLine.trim();
       }
     } else {
-      // Ищем совпадение персонажа
       for (const rule of state.characters) {
         if (!rule.enabled || !rule.trigger || rule.trigger === '*') continue;
 
         const trig = rule.trigger;
-        // Разделители: ":", "»", ">", "-", "—" или пробел
         const pattern = new RegExp(`^(${escapeRegExp(trig)})([:»>—\\-]\\s*|\\s+)(.*)$`, 'i');
         const match = rawLine.match(pattern);
 
@@ -348,15 +654,12 @@ function processScriptLines(text) {
     let combinedTokens = [];
 
     if (matchedRule && matchedRule.trigger !== '*') {
-      // Персонаж распознан
       const prefixStr = matchedRule.prefix || '';
       const nameStr = matchedRule.displayName || matchedRule.trigger;
       const sepStr = matchedRule.separator !== undefined ? matchedRule.separator : ': ';
 
-      // Токены имени
       const nameTokens = parseMinecraftTokens(prefixStr + nameStr + sepStr);
 
-      // Токены реплики (с базовым цветом реплики персонажа)
       let defaultMsgColor = null;
       let defaultFormats = {};
       if (matchedRule.msgColor) {
@@ -376,7 +679,6 @@ function processScriptLines(text) {
       const speechTokens = parseMinecraftTokens(speechText, defaultMsgColor, defaultFormats);
       combinedTokens = [...nameTokens, ...speechTokens];
     } else if (matchedRule && matchedRule.trigger === '*') {
-      // Авторская ремарка
       let defaultColor = 'gray';
       let defaultFormats = { italic: true };
       if (matchedRule.msgColor) {
@@ -388,7 +690,6 @@ function processScriptLines(text) {
       }
       combinedTokens = parseMinecraftTokens(speechText, defaultColor, defaultFormats);
     } else {
-      // Обычная строка без персонажа
       combinedTokens = parseMinecraftTokens(rawLine);
     }
 
@@ -404,31 +705,36 @@ function processScriptLines(text) {
 
 // --- Главное обновление редактора ---
 function updateEditor() {
-  const scriptText = els.scriptInput.value;
+  const scriptText = els.scriptInput ? els.scriptInput.value : '';
   const lines = scriptText.split('\n');
 
-  // 1. Номера строк
-  els.lineNumbers.textContent = Array.from({ length: lines.length }, (_, i) => i + 1).join('\n');
-  els.lineCountBadge.textContent = `${lines.length} ${getNoun(lines.length, 'строка', 'строки', 'строк')}`;
-
-  // 2. Обработка сценария
-  const processed = processScriptLines(scriptText);
-  els.commandCountBadge.textContent = `${processed.length} ${getNoun(processed.length, 'команда', 'команды', 'команд')}`;
-
-  // 3. Minecraft Chat Preview
-  if (processed.length === 0) {
-    els.mcChatScreen.innerHTML = '<div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>';
-  } else {
-    els.mcChatScreen.innerHTML = processed.map(item => {
-      const html = tokensToHtml(item.tokens);
-      return `<div class="mc-chat-line">${html}</div>`;
-    }).join('');
-    // Прокручиваем чат вниз к последней реплике
-    els.mcChatScreen.scrollTop = els.mcChatScreen.scrollHeight;
+  if (els.lineNumbers) {
+    els.lineNumbers.textContent = Array.from({ length: lines.length }, (_, i) => i + 1).join('\n');
+  }
+  if (els.lineCountBadge) {
+    els.lineCountBadge.textContent = `${lines.length} ${getNoun(lines.length, 'строка', 'строки', 'строк')}`;
   }
 
-  // 4. Генерация вывода команд
-  const selector = state.selector === 'custom' ? (state.customSelector || '@a') : state.selector;
+  const processed = processScriptLines(scriptText);
+  if (els.commandCountBadge) {
+    els.commandCountBadge.textContent = `${processed.length} ${getNoun(processed.length, 'команда', 'команды', 'команд')}`;
+  }
+
+  // Превью чата
+  if (els.mcChatScreen) {
+    if (processed.length === 0) {
+      els.mcChatScreen.innerHTML = '<div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>';
+    } else {
+      els.mcChatScreen.innerHTML = processed.map(item => {
+        const html = tokensToHtml(item.tokens);
+        return `<div class="mc-chat-line">${html}</div>`;
+      }).join('');
+      els.mcChatScreen.scrollTop = els.mcChatScreen.scrollHeight;
+    }
+  }
+
+  // Генерация команд
+  const selector = getEffectiveSelector();
   const commandLines = [];
 
   processed.forEach(item => {
@@ -446,22 +752,25 @@ function updateEditor() {
     }
   });
 
-  els.exportCodeOutput.textContent = commandLines.join('\n');
+  if (els.exportCodeOutput) {
+    els.exportCodeOutput.textContent = commandLines.join('\n');
+  }
 
-  // 5. Сохранение в LocalStorage
   saveToLocalStorage();
 }
 
 // --- Рендер карточек персонажей ---
 function renderCharacterRules() {
+  if (!els.charRulesList) return;
   els.charRulesList.innerHTML = '';
-  els.charCountBadge.textContent = `${state.characters.length} ${getNoun(state.characters.length, 'персонаж', 'персонажа', 'персонажей')}`;
+  if (els.charCountBadge) {
+    els.charCountBadge.textContent = `${state.characters.length} ${getNoun(state.characters.length, 'персонаж', 'персонажа', 'персонажей')}`;
+  }
 
   state.characters.forEach((char, index) => {
     const card = document.createElement('div');
     card.className = 'char-rule-card';
 
-    // Превью имени
     const namePreviewTokens = parseMinecraftTokens((char.displayName || char.trigger) + (char.separator || ''));
     const namePreviewHtml = tokensToHtml(namePreviewTokens);
 
@@ -489,7 +798,6 @@ function renderCharacterRules() {
       <button type="button" class="btn-icon-del" title="Удалить персонажа">✕</button>
     `;
 
-    // Инпуты карточки
     const inpTrigger = card.querySelector('.char-trigger');
     const inpName = card.querySelector('.char-name');
     const inpColor = card.querySelector('.char-color');
@@ -503,7 +811,6 @@ function renderCharacterRules() {
         char.displayName = inpName.value;
         char.msgColor = inpColor.value;
         char.separator = inpSep.value;
-        // Обновляем превью имя
         const updatedTokens = parseMinecraftTokens((char.displayName || char.trigger) + (char.separator || ''));
         card.querySelector('.char-preview-pill').innerHTML = tokensToHtml(updatedTokens) || '&nbsp;';
         updateEditor();
@@ -522,236 +829,247 @@ function renderCharacterRules() {
 
 // --- Слушатели событий ---
 function setupEventListeners() {
-  // Скролл номеров строк вместе с редактором
-  els.scriptInput.addEventListener('scroll', () => {
-    els.lineNumbers.scrollTop = els.scriptInput.scrollTop;
-  });
-
-  els.scriptInput.addEventListener('focus', () => {
-    state.lastFocusedInput = els.scriptInput;
-  });
-
-  els.scriptInput.addEventListener('input', updateEditor);
-
-  // Добавление персонажа
-  els.btnAddCharacter.addEventListener('click', () => {
-    state.characters.push({
-      id: 'char_' + Date.now(),
-      trigger: 'Персонаж ' + (state.characters.length + 1),
-      displayName: '&aПерсонаж ' + (state.characters.length + 1),
-      separator: ': ',
-      msgColor: '&f',
-      prefix: '',
-      enabled: true
+  if (els.scriptInput) {
+    els.scriptInput.addEventListener('scroll', () => {
+      if (els.lineNumbers) els.lineNumbers.scrollTop = els.scriptInput.scrollTop;
     });
-    renderCharacterRules();
-    updateEditor();
-  });
 
-  // Вставка HEX цвета
-  els.btnInsertHex.addEventListener('click', () => {
-    const hex = els.hexColorPicker.value;
-    insertCodeAtCursor(`&#${hex.replace('#', '')}`);
-  });
+    els.scriptInput.addEventListener('focus', () => {
+      state.lastFocusedInput = els.scriptInput;
+    });
 
-  // Селектор
-  els.exportSelector.addEventListener('change', (e) => {
-    state.selector = e.target.value;
-    if (state.selector === 'custom') {
-      els.customSelectorInput.style.display = 'inline-block';
-      els.customSelectorInput.focus();
-    } else {
-      els.customSelectorInput.style.display = 'none';
-    }
-    updateEditor();
-  });
+    els.scriptInput.addEventListener('input', updateEditor);
+  }
 
-  els.customSelectorInput.addEventListener('input', (e) => {
-    state.customSelector = e.target.value;
-    updateEditor();
-  });
-
-  // Формат
-  els.exportFormat.addEventListener('change', (e) => {
-    state.format = e.target.value;
-    updateEditor();
-  });
-
-  // Звук
-  els.chkPlaysound.addEventListener('change', (e) => {
-    state.playSoundEnabled = e.target.checked;
-    els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
-    updateEditor();
-  });
-
-  els.playsoundInput.addEventListener('input', (e) => {
-    state.playSoundName = e.target.value;
-    updateEditor();
-  });
-
-  // Копирование всех команд
-  els.btnCopyAll.addEventListener('click', async () => {
-    const text = els.exportCodeOutput.textContent;
-    if (!text.trim()) return;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      showCopyToast('✅ Скопировано в буфер обмена!');
-    } catch (err) {
-      // Fallback
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      showCopyToast('✅ Скопировано!');
-    }
-  });
-
-  // Скачать .mcfunction
-  els.btnDownloadMcfunction.addEventListener('click', () => {
-    const text = els.exportCodeOutput.textContent;
-    if (!text.trim()) return;
-
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dialogue.mcfunction';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showCopyToast('💾 dialogue.mcfunction скачан!');
-  });
-
-  // Пример диалога
-  els.btnSampleData.addEventListener('click', () => {
-    els.scriptInput.value = `Сенко: Добро пожаловать домой, Вай! Чай уже готов~
-Вай: Спасибо, Сенко! Как прошёл твой день?
-*На плите тихо и уютно шумит медный чайник с жасминовым чаем*
-Сенко: Всё замечательно! Садись скорее, я приготовила жареный тофу и налила тебе полную чашку!
-Вай: Ты просто волшебная! Рядом с тобой любая усталость мигом улетучивается.
-Сенко: Хи-хи, на то я и лиса-помощница! А теперь кушай и отдыхай, ты сегодня славно потрудился~`;
-    updateEditor();
-  });
-
-  // Очистка
-  els.btnClearAll.addEventListener('click', () => {
-    if (confirm('Очистить текст сценария?')) {
-      els.scriptInput.value = '';
+  if (els.btnAddCharacter) {
+    els.btnAddCharacter.addEventListener('click', () => {
+      state.characters.push({
+        id: 'char_' + Date.now(),
+        trigger: 'Персонаж ' + (state.characters.length + 1),
+        displayName: '&aПерсонаж ' + (state.characters.length + 1),
+        separator: ': ',
+        msgColor: '&f',
+        prefix: '',
+        enabled: true
+      });
+      renderCharacterRules();
       updateEditor();
-    }
-  });
+    });
+  }
 
-  // Экспорт проекта в JSON
-  els.btnExportProject.addEventListener('click', () => {
-    const project = {
-      version: 1,
-      script: els.scriptInput.value,
-      characters: state.characters,
-      selector: state.selector,
-      customSelector: state.customSelector,
-      format: state.format,
-      playSoundEnabled: state.playSoundEnabled,
-      playSoundName: state.playSoundName
-    };
+  if (els.btnInsertHex) {
+    els.btnInsertHex.addEventListener('click', () => {
+      const hex = els.hexColorPicker.value;
+      insertCodeAtCursor(`&#${hex.replace('#', '')}`);
+    });
+  }
 
-    const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fluffylore_project.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
+  if (els.exportSelector) {
+    els.exportSelector.addEventListener('change', (e) => {
+      state.selector = e.target.value;
+      updateEditor();
+    });
+  }
 
-  // Импорт проекта
-  els.fileImportProject.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  if (els.exportFormat) {
+    els.exportFormat.addEventListener('change', (e) => {
+      state.format = e.target.value;
+      updateEditor();
+    });
+  }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        if (data.script !== undefined) els.scriptInput.value = data.script;
-        if (Array.isArray(data.characters)) state.characters = data.characters;
-        if (data.selector) state.selector = data.selector;
-        if (data.customSelector) state.customSelector = data.customSelector;
-        if (data.format) state.format = data.format;
-        if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
-        if (data.playSoundName) state.playSoundName = data.playSoundName;
-
-        els.exportSelector.value = state.selector;
-        els.customSelectorInput.value = state.customSelector || '';
-        els.customSelectorInput.style.display = state.selector === 'custom' ? 'inline-block' : 'none';
-        els.exportFormat.value = state.format;
-        els.chkPlaysound.checked = state.playSoundEnabled;
+  if (els.chkPlaysound) {
+    els.chkPlaysound.addEventListener('change', (e) => {
+      state.playSoundEnabled = e.target.checked;
+      if (els.playsoundInput) {
         els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
-        els.playsoundInput.value = state.playSoundName;
-
-        renderCharacterRules();
-        updateEditor();
-        showCopyToast('📂 Проект успешно загружен!');
-      } catch (err) {
-        alert('Ошибка при чтении файла проекта: ' + err.message);
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  });
+      updateEditor();
+    });
+  }
+
+  if (els.playsoundInput) {
+    els.playsoundInput.addEventListener('input', (e) => {
+      state.playSoundName = e.target.value;
+      updateEditor();
+    });
+  }
+
+  if (els.btnCopyAll) {
+    els.btnCopyAll.addEventListener('click', async () => {
+      const text = els.exportCodeOutput.textContent;
+      if (!text.trim()) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showCopyToast('✅ Скопировано в буфер обмена!');
+      } catch (err) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showCopyToast('✅ Скопировано!');
+      }
+    });
+  }
+
+  if (els.btnDownloadMcfunction) {
+    els.btnDownloadMcfunction.addEventListener('click', () => {
+      const text = els.exportCodeOutput.textContent;
+      if (!text.trim()) return;
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dialogue.mcfunction';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showCopyToast('💾 dialogue.mcfunction скачан!');
+    });
+  }
+
+  if (els.btnSampleData) {
+    els.btnSampleData.addEventListener('click', () => {
+      if (els.scriptInput) {
+        els.scriptInput.value = DEFAULT_SAMPLE_DIALOGUE;
+        updateEditor();
+      }
+    });
+  }
+
+  if (els.btnClearAll) {
+    els.btnClearAll.addEventListener('click', () => {
+      if (confirm('Очистить текст сценария?')) {
+        if (els.scriptInput) els.scriptInput.value = '';
+        updateEditor();
+      }
+    });
+  }
+
+  if (els.btnExportProject) {
+    els.btnExportProject.addEventListener('click', () => {
+      const project = {
+        version: 2,
+        script: els.scriptInput ? els.scriptInput.value : '',
+        characters: state.characters,
+        selector: state.selector,
+        useBuilderSelector: state.useBuilderSelector,
+        builderSelector: state.builderSelector,
+        hexFormat: state.hexFormat,
+        chatBgMode: state.chatBgMode,
+        chatOpacity: state.chatOpacity,
+        format: state.format,
+        playSoundEnabled: state.playSoundEnabled,
+        playSoundName: state.playSoundName
+      };
+
+      const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'fluffylore_project.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (els.fileImportProject) {
+    els.fileImportProject.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (data.script !== undefined && els.scriptInput) els.scriptInput.value = data.script;
+          if (Array.isArray(data.characters)) state.characters = data.characters;
+          if (data.selector) state.selector = data.selector;
+          if (data.useBuilderSelector !== undefined) state.useBuilderSelector = data.useBuilderSelector;
+          if (data.builderSelector) state.builderSelector = data.builderSelector;
+          if (data.hexFormat) state.hexFormat = data.hexFormat;
+          if (data.chatBgMode) state.chatBgMode = data.chatBgMode;
+          if (data.chatOpacity !== undefined) state.chatOpacity = data.chatOpacity;
+          if (data.format) state.format = data.format;
+          if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
+          if (data.playSoundName) state.playSoundName = data.playSoundName;
+
+          applyStateToUI();
+          renderCharacterRules();
+          computeSelector();
+          updateEditor();
+          showCopyToast('📂 Проект успешно загружен!');
+        } catch (err) {
+          alert('Ошибка при чтении файла проекта: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+  }
 }
 
 // --- Управление Drag-сплиттерами ---
 function setupResizers() {
-  // Горизонтальный сплиттер (между левой и правой колонкой)
   let isDraggingMain = false;
-  els.resizerMain.addEventListener('mousedown', (e) => {
-    isDraggingMain = true;
-    els.resizerMain.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-  });
+  if (els.resizerMain) {
+    els.resizerMain.addEventListener('mousedown', () => {
+      isDraggingMain = true;
+      els.resizerMain.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+  }
 
-  // Вертикальный сплиттер (между верхней и нижней частью справа)
   let isDraggingSub = false;
-  els.resizerSub.addEventListener('mousedown', (e) => {
-    isDraggingSub = true;
-    els.resizerSub.classList.add('dragging');
-    document.body.style.cursor = 'row-resize';
-  });
+  if (els.resizerSub) {
+    els.resizerSub.addEventListener('mousedown', () => {
+      isDraggingSub = true;
+      els.resizerSub.classList.add('dragging');
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+    });
+  }
 
   window.addEventListener('mousemove', (e) => {
-    if (isDraggingMain) {
+    if (isDraggingMain && els.workspace && els.panelLeft) {
       const containerWidth = els.workspace.clientWidth;
       const newWidth = (e.clientX / containerWidth) * 100;
       if (newWidth > 20 && newWidth < 80) {
         els.panelLeft.style.width = `${newWidth}%`;
       }
     }
-    if (isDraggingSub) {
+    if (isDraggingSub && els.panelTopSection) {
       const rightPanel = document.getElementById('panel-right');
-      const rect = rightPanel.getBoundingClientRect();
-      const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
-      if (newHeight > 25 && newHeight < 85) {
-        els.panelRules.style.height = `${newHeight}%`;
+      if (rightPanel) {
+        const rect = rightPanel.getBoundingClientRect();
+        const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
+        if (newHeight > 20 && newHeight < 80) {
+          els.panelTopSection.style.height = `${newHeight}%`;
+        }
       }
     }
   });
 
   window.addEventListener('mouseup', () => {
-    if (isDraggingMain) {
+    if (isDraggingMain && els.resizerMain) {
       isDraggingMain = false;
       els.resizerMain.classList.remove('dragging');
       document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     }
-    if (isDraggingSub) {
+    if (isDraggingSub && els.resizerSub) {
       isDraggingSub = false;
       els.resizerSub.classList.remove('dragging');
       document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     }
   });
 }
@@ -774,10 +1092,11 @@ function startObfuscationLoop() {
 
 // --- Вспомогательные функции ---
 function showCopyToast(msg) {
+  if (!els.copyStatusTip) return;
   els.copyStatusTip.textContent = msg;
   els.copyStatusTip.style.opacity = '1';
   setTimeout(() => {
-    els.copyStatusTip.style.opacity = '0';
+    if (els.copyStatusTip) els.copyStatusTip.style.opacity = '0';
   }, 2200);
 }
 
@@ -799,44 +1118,124 @@ function getNoun(number, one, two, five) {
   return five;
 }
 
-// Сохранение и загрузка LocalStorage
+// --- LocalStorage ---
 function saveToLocalStorage() {
   try {
     const data = {
-      script: els.scriptInput.value,
+      script: els.scriptInput ? els.scriptInput.value : '',
       characters: state.characters,
       selector: state.selector,
-      customSelector: state.customSelector,
+      useBuilderSelector: state.useBuilderSelector,
+      builderSelector: state.builderSelector,
+      hexFormat: state.hexFormat,
+      chatBgMode: state.chatBgMode,
+      chatOpacity: state.chatOpacity,
       format: state.format,
       playSoundEnabled: state.playSoundEnabled,
-      playSoundName: state.playSoundName
+      playSoundName: state.playSoundName,
+      activeUpperTab: state.activeUpperTab,
+      activeLowerTab: state.activeLowerTab
     };
     localStorage.setItem('fluffylore_state', JSON.stringify(data));
   } catch (e) {}
 }
 
+function applyStateToUI() {
+  if (els.exportSelector) els.exportSelector.value = state.selector || '@a';
+  if (els.exportFormat) els.exportFormat.value = state.format || 'tellraw';
+  if (els.hexFormatSelect) els.hexFormatSelect.value = state.hexFormat || 'no-hash';
+  if (els.chkPlaysound) els.chkPlaysound.checked = !!state.playSoundEnabled;
+  if (els.playsoundInput) {
+    els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
+    els.playsoundInput.value = state.playSoundName || 'entity.experience_orb.pickup';
+  }
+
+  if (els.chkUseBuilderSelector) {
+    els.chkUseBuilderSelector.checked = state.useBuilderSelector;
+  }
+  if (els.manualSelectorWrap) {
+    els.manualSelectorWrap.style.display = state.useBuilderSelector ? 'none' : 'flex';
+  }
+
+  if (state.builderSelector) {
+    if (els.selBaseTarget) els.selBaseTarget.value = state.builderSelector.base || '@a';
+    if (els.selPlayerName) els.selPlayerName.value = state.builderSelector.player || '';
+    if (els.selTag) els.selTag.value = state.builderSelector.tag || '';
+    if (els.selDistance) els.selDistance.value = state.builderSelector.distance || '';
+    if (els.selLimit) els.selLimit.value = state.builderSelector.limit || '';
+    if (els.selSort) els.selSort.value = state.builderSelector.sort || '';
+    if (els.selTeam) els.selTeam.value = state.builderSelector.team || '';
+    if (els.selGamemode) els.selGamemode.value = state.builderSelector.gamemode || '';
+    if (els.selCustomArgs) els.selCustomArgs.value = state.builderSelector.custom || '';
+
+    if (els.wrapPlayerName) {
+      els.wrapPlayerName.style.display = (state.builderSelector.base === 'player') ? 'flex' : 'none';
+    }
+  }
+
+  applyChatViewportControls();
+}
+
 function loadFromLocalStorage() {
   try {
     const saved = localStorage.getItem('fluffylore_state') || localStorage.getItem('lorehelper_state');
-    if (!saved) return;
+    if (!saved) {
+      if (els.scriptInput && !els.scriptInput.value) {
+        els.scriptInput.value = DEFAULT_SAMPLE_DIALOGUE;
+      }
+      return;
+    }
     const data = JSON.parse(saved);
-    if (data.script !== undefined) els.scriptInput.value = data.script;
-    if (Array.isArray(data.characters) && data.characters.length > 0) state.characters = data.characters;
+    if (data.script !== undefined && els.scriptInput) els.scriptInput.value = data.script;
+
+    if (Array.isArray(data.characters) && data.characters.length > 0) {
+      state.characters = data.characters.map(char => {
+        // Миграция старого персонажа Вай на Широ
+        if (char.trigger === 'Вай') {
+          return {
+            ...char,
+            id: 'char_shiro',
+            trigger: 'Широ',
+            displayName: '&f&lШиро',
+            msgColor: '&b'
+          };
+        }
+        return char;
+      });
+    }
+
     if (data.selector) state.selector = data.selector;
-    if (data.customSelector) state.customSelector = data.customSelector;
+    if (data.useBuilderSelector !== undefined) state.useBuilderSelector = data.useBuilderSelector;
+    if (data.builderSelector) state.builderSelector = { ...state.builderSelector, ...data.builderSelector };
+    if (data.hexFormat) state.hexFormat = data.hexFormat;
+    if (data.chatBgMode) state.chatBgMode = data.chatBgMode;
+    if (data.chatOpacity !== undefined) state.chatOpacity = data.chatOpacity;
     if (data.format) state.format = data.format;
     if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
     if (data.playSoundName) state.playSoundName = data.playSoundName;
+    if (data.activeUpperTab) state.activeUpperTab = data.activeUpperTab;
+    if (data.activeLowerTab) state.activeLowerTab = data.activeLowerTab;
 
-    els.exportSelector.value = state.selector;
-    els.customSelectorInput.value = state.customSelector || '';
-    els.customSelectorInput.style.display = state.selector === 'custom' ? 'inline-block' : 'none';
-    els.exportFormat.value = state.format;
-    els.chkPlaysound.checked = state.playSoundEnabled;
-    els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
-    els.playsoundInput.value = state.playSoundName;
+    applyStateToUI();
+
+    // Восстановление активных вкладок
+    if (state.activeUpperTab && els.tabBtnChars && els.tabBtnSelector) {
+      const isChars = state.activeUpperTab === 'tab-chars';
+      els.tabBtnChars.classList.toggle('active', isChars);
+      els.tabChars.classList.toggle('active', isChars);
+      els.tabBtnSelector.classList.toggle('active', !isChars);
+      els.tabSelector.classList.toggle('active', !isChars);
+    }
+
+    if (state.activeLowerTab && els.tabBtnPreview && els.tabBtnExport) {
+      const isPreview = state.activeLowerTab === 'tab-preview';
+      els.tabBtnPreview.classList.toggle('active', isPreview);
+      els.tabPreview.classList.toggle('active', isPreview);
+      els.tabBtnExport.classList.toggle('active', !isPreview);
+      els.tabExport.classList.toggle('active', !isPreview);
+      updateControlBarsVisibility();
+    }
   } catch (e) {}
 }
 
-// Запуск при загрузке страницы
 window.addEventListener('DOMContentLoaded', init);

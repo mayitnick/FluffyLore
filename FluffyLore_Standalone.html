@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FluffyLore — Пушистый редактор диалогов и Tellraw для Minecraft</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
+  <!-- Подключение пиксельного шрифта Minecraft с поддержкой кириллицы и латиницы -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/minecraft-4" rel="stylesheet">
   <style>
 /* === FluffyLore — Modern Minecraft Dialogue & Tellraw Editor Theme === */
 :root {
@@ -32,7 +37,7 @@
   
   --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
-  --font-mc: 'VT323', 'Courier New', monospace;
+  --font-mc: 'Minecraft', 'VT323', 'Courier New', monospace;
 }
 
 * {
@@ -54,7 +59,7 @@ body {
 
 /* === Шапка === */
 .app-header {
-  height: 54px;
+  height: 52px;
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -136,7 +141,7 @@ body {
 }
 
 .btn-xs {
-  padding: 3px 7px;
+  padding: 4px 8px;
   font-size: 11px;
   border-radius: 4px;
 }
@@ -201,7 +206,7 @@ body {
 }
 
 .panel-left {
-  width: 45%;
+  width: 44%;
   min-width: 320px;
   background-color: var(--bg-card);
 }
@@ -239,7 +244,7 @@ body {
 
 /* Панель шапка */
 .panel-header {
-  height: 44px;
+  height: 42px;
   padding: 0 14px;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
@@ -354,23 +359,111 @@ body {
   border-radius: 3px;
   font-family: var(--font-mono);
 }
+.font-license-link a {
+  color: var(--text-dim);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--text-dim);
+}
+.font-license-link a:hover {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
 
-/* === Правая верхняя панель: Замены и стили === */
-.panel-rules {
-  height: 58%;
-  min-height: 240px;
+/* === Вкладочная система (Tabs) === */
+.panel-top-section {
+  height: 52%;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
 }
 
+.panel-bottom-section {
+  flex: 1;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+}
+
+.tabs-header {
+  height: 42px;
+  background: #14161b;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.tabs-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: #fff;
+  background: var(--bg-hover);
+}
+
+.tab-btn.active {
+  color: #fff;
+  background: var(--bg-card-sub);
+  border-color: var(--border-color);
+  font-weight: 600;
+}
+
+.tab-badge {
+  font-size: 10px;
+  background: #000;
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 2px;
+}
+
+.tab-btn.active .tab-badge {
+  background: rgba(255, 157, 0, 0.15);
+  color: var(--primary);
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Палитра цветов Minecraft === */
 .color-palette-bar {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
-  background: #14151a;
+  padding: 7px 14px;
+  background: #121318;
   border-bottom: 1px solid var(--border-color);
   overflow-x: auto;
   flex-shrink: 0;
@@ -433,7 +526,7 @@ body {
 .hex-picker-wrap {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   margin-left: auto;
 }
 .hex-picker-wrap input[type="color"] {
@@ -454,12 +547,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: #111216;
+  background: #101116;
 }
 
 .char-rule-card {
   display: grid;
-  grid-template-columns: 140px 180px 100px 90px 80px 32px;
+  grid-template-columns: 140px 180px 100px 90px 110px 32px;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
@@ -502,6 +595,17 @@ body {
   border-color: var(--primary);
 }
 
+.select-xs {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  outline: none;
+}
+
 .char-preview-pill {
   font-family: var(--font-mc);
   font-size: 14px;
@@ -513,6 +617,8 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
 }
 
 .btn-icon-del {
@@ -535,73 +641,189 @@ body {
   border-color: rgba(239, 68, 68, 0.3);
 }
 
-/* Игровое Minecraft превью чата */
-.mc-preview-box {
-  background: #0e0f12;
-  border-top: 1px solid var(--border-color);
-  padding: 8px 14px 10px;
-  flex-shrink: 0;
-  max-height: 160px;
+/* === Конструктор селектора Minecraft === */
+.selector-builder-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  background: #101116;
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
 
-.mc-preview-header {
+.selector-builder-intro p {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 18px;
+}
+
+.selector-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 14px;
+  background: var(--bg-card);
+  padding: 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.builder-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.builder-field.span-2 {
+  grid-column: span 2;
+}
+
+.builder-field label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.selector-result-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 6px;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #14161d;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  flex-wrap: wrap;
 }
 
-.mc-preview-subhint {
-  font-size: 10px;
+.selector-result-bar .label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+#selector-result-preview {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(255, 157, 0, 0.12);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 157, 0, 0.3);
+}
+
+.use-builder-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-main);
+  cursor: pointer;
+  margin-left: auto;
+}
+
+/* === Превью чата Minecraft (Игровой вид) === */
+.preview-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ctrl-label {
+  font-size: 11px;
   color: var(--text-dim);
 }
 
-.mc-chat-screen {
-  background-color: rgba(0, 0, 0, 0.72);
-  border: 1px solid #202020;
-  border-radius: 4px;
-  padding: 8px 12px;
-  min-height: 72px;
-  max-height: 110px;
+.range-slider {
+  width: 80px;
+  height: 4px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.opacity-val-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 32px;
+  font-family: var(--font-mono);
+}
+
+.export-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Видовой экран Minecraft */
+.mc-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+  transition: background 0.3s ease;
+}
+
+/* Режимы фона видового экрана */
+.mc-viewport.bg-world {
+  background: radial-gradient(circle at 70% 30%, rgba(85, 255, 255, 0.15) 0%, transparent 60%),
+              linear-gradient(180deg, #18233c 0%, #253b32 45%, #152418 100%);
+  background-size: cover;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+}
+
+.mc-viewport.bg-dark {
+  background: #101216;
+}
+
+.mc-viewport.bg-black {
+  background: #000000;
+}
+
+.mc-chat-screen-full {
+  width: 100%;
+  max-height: 100%;
   overflow-y: auto;
-  font-family: 'Minecraft', 'VT323', 'Courier New', monospace;
-  font-size: 16px;
-  line-height: 22px;
-  color: #fff;
+  border-radius: 2px;
+  padding: 10px 14px;
+  /* Игровой шрифт Minecraft */
+  font-family: var(--font-mc);
+  font-size: 17px;
+  line-height: 24px;
+  color: #ffffff;
   letter-spacing: 0.5px;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.15s ease;
 }
 
 .mc-chat-line {
   margin-bottom: 2px;
   white-space: pre-wrap;
   word-break: break-word;
-  text-shadow: 2px 2px 0px #1a1a1a;
+  /* Истинная пиксельная тень символов Minecraft (смещение на 2px вниз-вправо с затемнением цвета) */
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
 }
 
 .mc-chat-empty {
-  color: #555;
+  color: #777777;
   font-style: italic;
-  font-size: 13px;
+  font-size: 15px;
 }
 
-/* === Правая нижняя панель: Экспорт Tellraw === */
-.panel-export {
-  flex: 1;
-  min-height: 180px;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-card);
-}
-
-.export-options-bar {
+/* === Экспорт Tellraw === */
+.export-sub-toolbar {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  padding: 8px 14px;
+  background: #14151a;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .option-item {
@@ -621,20 +843,10 @@ body {
   user-select: none;
 }
 
-.export-actions-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  background: #141519;
-  border-bottom: 1px solid var(--border-color);
-  flex-shrink: 0;
-}
-
 .copy-status-tip {
   font-size: 11px;
   color: var(--success);
-  margin-left: 8px;
+  margin-left: auto;
   font-weight: 500;
   transition: opacity 0.3s ease;
 }
@@ -695,8 +907,8 @@ body {
       </div>
     </div>
     <div class="header-actions">
-      <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить пример диалога">
-        <span>✨ Пример</span>
+      <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить милый пример диалога Сенко и Широ">
+        <span>✨ Пример (Сенко и Широ)</span>
       </button>
       <button class="btn btn-secondary btn-sm" id="btn-export-project" title="Экспорт проекта в JSON файл">
         <span>💾 Сохранить проект</span>
@@ -729,95 +941,208 @@ body {
         <div class="line-numbers" id="line-numbers">1</div>
         <textarea id="script-input" spellcheck="false" placeholder="Пишите ваш диалог здесь, например:
 
-Сенко: Добро пожаловать домой, Вай! Чай уже готов~
-Вай: Спасибо, Сенко! Как прошёл день?
-*На плите уютно шумит чайник с жасминовым чаем*
-Сенко: Всё чудесно! Садись скорее, я приготовила жареный тофу!"></textarea>
+Широ: Эй, Сенко! Смотри, как великая богиня Широ умеет повелевать молниями!
+Сенко: Широ-сама, пожалуйста, поосторожнее! Вы же разобьёте сервиз для чая~
+*Широ с гордым видом складывает руки на груди и виляет белым пушистым хвостом*
+Широ: Хмф! Ладно-ладно, если ты угостишь меня тем вкуснейшим жареным тофу, я буду паинькой!
+Сенко: Хи-хи, уже накрыто на стол. Приятного аппетита!"></textarea>
       </div>
       <div class="panel-footer-info">
         <span>💡 Поддерживаются цветовые коды (<code>&6</code>, <code>&l</code>, <code>&#ffaa00</code>) прямо в тексте</span>
+        <span class="font-license-link"><a href="https://fontlibrary.org/en/font/minecraftia" target="_blank" rel="noopener">Лицензия шрифта (OFL)</a></span>
       </div>
     </section>
 
     <!-- Вертикальный разделитель между левой и правой частью -->
     <div class="resizer-horizontal" id="resizer-main" title="Потяните для изменения ширины"></div>
 
-    <!-- Правая колонка: Сверху правила замен, снизу экспорт tellraw -->
+    <!-- Правая колонка -->
     <section class="panel panel-right" id="panel-right">
       
-      <!-- Правая верхняя часть: Персонажи и правила замен -->
-      <div class="panel-section panel-rules" id="panel-rules">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="icon">🎭</span>
-            <h2>Персонажи и стили замен</h2>
-            <span class="badge" id="char-count-badge">0 персонажей</span>
+      <!-- Правая верхняя часть: Вкладки (Персонажи / Настройка Селектора) -->
+      <div class="panel-section panel-top-section" id="panel-top-section">
+        <div class="tabs-header">
+          <div class="tabs-list">
+            <button class="tab-btn active" data-tab="tab-chars" id="tab-btn-chars">
+              <span class="icon">🎭</span> Персонажи и замена
+              <span class="tab-badge" id="char-count-badge">0</span>
+            </button>
+            <button class="tab-btn" data-tab="tab-selector" id="tab-btn-selector">
+              <span class="icon">🎯</span> Чуткая настройка селектора
+            </button>
           </div>
-          <div class="panel-tools">
-            <button class="btn btn-primary btn-sm" id="btn-add-character">
+          <div class="tabs-actions">
+            <button class="btn btn-primary btn-xs" id="btn-add-character">
               <span>➕ Добавить персонажа</span>
             </button>
           </div>
         </div>
 
-        <!-- Быстрая цветовая палитра Minecraft -->
-        <div class="color-palette-bar">
-          <span class="palette-label">Палитра цветов Minecraft:</span>
-          <div class="palette-colors" id="palette-colors">
-            <!-- Генерируется динамически через JS -->
+        <!-- Контент вкладки 1: Персонажи -->
+        <div class="tab-content active" id="tab-chars">
+          <!-- Быстрая цветовая палитра Minecraft -->
+          <div class="color-palette-bar">
+            <span class="palette-label">Палитра цветов Minecraft:</span>
+            <div class="palette-colors" id="palette-colors"></div>
+            <div class="palette-formats" id="palette-formats"></div>
+            <div class="hex-picker-wrap" title="Выбрать кастомный HEX цвет (&#rrggbb)">
+              <input type="color" id="hex-color-picker" value="#ffaa00">
+              <button class="btn btn-secondary btn-xs" id="btn-insert-hex">Вставить &#HEX</button>
+            </div>
           </div>
-          <div class="palette-formats" id="palette-formats">
-            <!-- Стили форматирования &l, &o и т.д. -->
-          </div>
-          <div class="hex-picker-wrap" title="Выбрать кастомный HEX цвет для версий 1.16+">
-            <input type="color" id="hex-color-picker" value="#ffaa00">
-            <button class="btn btn-secondary btn-xs" id="btn-insert-hex">Вставить HEX</button>
+
+          <!-- Список правил персонажей -->
+          <div class="character-rules-list" id="character-rules-list"></div>
+        </div>
+
+        <!-- Контент вкладки 2: Конструктор селектора Minecraft -->
+        <div class="tab-content" id="tab-selector">
+          <div class="selector-builder-container">
+            <div class="selector-builder-intro">
+              <p>Настройте условия, кому адресованы диалоги: всей карте, игрокам с определённым квестовым тегом или в заданном радиусе.</p>
+            </div>
+
+            <div class="selector-grid">
+              <!-- Базовая цель -->
+              <div class="builder-field">
+                <label>Базовый тип цели:</label>
+                <select id="sel-base-target" class="select-sm">
+                  <option value="@a">@a — Всем игрокам</option>
+                  <option value="@p">@p — Ближайшему игроку</option>
+                  <option value="@s">@s — Текущему / вызывающему (@s)</option>
+                  <option value="@r">@r — Случайному игроку</option>
+                  <option value="player">Конкретный ник игрока</option>
+                </select>
+              </div>
+
+              <!-- Ник игрока (если выбран 'player') -->
+              <div class="builder-field" id="wrap-player-name" style="display:none;">
+                <label>Никнейм игрока:</label>
+                <input type="text" id="sel-player-name" class="input-sm" placeholder="Steve">
+              </div>
+
+              <!-- Тег -->
+              <div class="builder-field">
+                <label>Тег игрока (tag=...):</label>
+                <input type="text" id="sel-tag" class="input-sm" placeholder="quest_act1 (можно без 'tag=')">
+              </div>
+
+              <!-- Дистанция -->
+              <div class="builder-field">
+                <label>Дистанция (distance=...):</label>
+                <input type="text" id="sel-distance" class="input-sm" placeholder="..15 или 5..30">
+              </div>
+
+              <!-- Лимит игроков -->
+              <div class="builder-field">
+                <label>Лимит (limit=...):</label>
+                <input type="number" id="sel-limit" class="input-sm" placeholder="1" min="1">
+              </div>
+
+              <!-- Сортировка -->
+              <div class="builder-field">
+                <label>Сортировка (sort=...):</label>
+                <select id="sel-sort" class="select-sm">
+                  <option value="">(По умолчанию)</option>
+                  <option value="nearest">nearest (ближайшие)</option>
+                  <option value="furthest">furthest (дальние)</option>
+                  <option value="random">random (случайный порядок)</option>
+                  <option value="arbitrary">arbitrary (произвольный)</option>
+                </select>
+              </div>
+
+              <!-- Команда -->
+              <div class="builder-field">
+                <label>Команда (team=...):</label>
+                <input type="text" id="sel-team" class="input-sm" placeholder="red / hunters">
+              </div>
+
+              <!-- Режим игры -->
+              <div class="builder-field">
+                <label>Режим игры (gamemode=...):</label>
+                <select id="sel-gamemode" class="select-sm">
+                  <option value="">(Любой)</option>
+                  <option value="adventure">adventure (приключение)</option>
+                  <option value="survival">survival (выживание)</option>
+                  <option value="creative">creative (творческий)</option>
+                  <option value="spectator">spectator (наблюдатель)</option>
+                </select>
+              </div>
+
+              <!-- Кастомные аргументы -->
+              <div class="builder-field span-2">
+                <label>Дополнительные аргументы селектора (NBT / координаты):</label>
+                <input type="text" id="sel-custom-args" class="input-sm" placeholder="x=100,y=64,z=-200,dx=10,dy=5,dz=10">
+              </div>
+            </div>
+
+            <!-- Итоговый селектор -->
+            <div class="selector-result-bar">
+              <span class="label">Итоговый селектор:</span>
+              <code id="selector-result-preview">@a</code>
+              <button class="btn btn-secondary btn-xs" id="btn-copy-selector" title="Скопировать селектор">📋 Копировать</button>
+              <label class="use-builder-checkbox">
+                <input type="checkbox" id="chk-use-builder-selector" checked>
+                <span>Использовать этот селектор для Tellraw</span>
+              </label>
+            </div>
           </div>
         </div>
 
-        <!-- Список правил персонажей -->
-        <div class="character-rules-list" id="character-rules-list">
-          <!-- Карточки персонажей рендерятся тут -->
-        </div>
-
-        <!-- Живое игровое превью чата Minecraft -->
-        <div class="mc-preview-box">
-          <div class="mc-preview-header">
-            <span>🎮 Игровое превью чата Minecraft:</span>
-            <span class="mc-preview-subhint">Точный вид в игре (пиксельный шрифт и цвета)</span>
-          </div>
-          <div class="mc-chat-screen" id="mc-chat-screen">
-            <div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>
-          </div>
-        </div>
       </div>
 
       <!-- Горизонтальный разделитель между верхней и нижней панелью справа -->
       <div class="resizer-vertical" id="resizer-sub" title="Потяните для изменения высоты"></div>
 
-      <!-- Правая нижняя часть: Экспорт Tellraw -->
-      <div class="panel-section panel-export" id="panel-export">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="icon">⚡</span>
-            <h2>Экспорт команд Tellraw</h2>
-            <span class="badge badge-accent" id="command-count-badge">0 команд</span>
+      <!-- Правая нижняя часть: Вкладки (Превью чата / Экспорт Tellraw) -->
+      <div class="panel-section panel-bottom-section" id="panel-bottom-section">
+        <div class="tabs-header">
+          <div class="tabs-list">
+            <button class="tab-btn active" data-tab="tab-preview" id="tab-btn-preview">
+              <span class="icon">🎮</span> Превью чата Minecraft
+            </button>
+            <button class="tab-btn" data-tab="tab-export" id="tab-btn-export">
+              <span class="icon">⚡</span> Экспорт Tellraw
+              <span class="tab-badge badge-accent" id="command-count-badge">0 команд</span>
+            </button>
           </div>
-          <div class="export-options-bar">
-            <!-- Селектор -->
-            <div class="option-item">
-              <label for="export-selector">Селектор:</label>
-              <select id="export-selector" class="select-sm">
-                <option value="@a">@a (всем игрокам)</option>
-                <option value="@p">@p (ближайшему)</option>
-                <option value="@s">@s (вызывающему)</option>
-                <option value="@r">@r (случайному)</option>
-                <option value="custom">Свой селектор...</option>
-              </select>
-              <input type="text" id="custom-selector-input" class="input-sm" placeholder="@a[distance=..10]" style="display:none; width: 140px;">
-            </div>
+          
+          <!-- Управление для превью чата -->
+          <div class="preview-controls-bar" id="preview-controls-bar">
+            <span class="ctrl-label">Фон:</span>
+            <select id="chat-bg-mode" class="select-xs">
+              <option value="world">Мир Minecraft 🌳</option>
+              <option value="dark">Тёмный фон 🌙</option>
+              <option value="black">Чистый чёрный ⬛</option>
+            </select>
+            <span class="ctrl-label">Непрозрачность:</span>
+            <input type="range" id="chat-opacity-slider" min="20" max="100" value="65" class="range-slider">
+            <span id="chat-opacity-val" class="opacity-val-text">65%</span>
+          </div>
 
-            <!-- Режим команды -->
+          <!-- Кнопки для экспорта -->
+          <div class="export-controls-bar" id="export-controls-bar" style="display:none;">
+            <button class="btn btn-success btn-xs" id="btn-copy-all">
+              <span>📋 Скопировать всё</span>
+            </button>
+            <button class="btn btn-secondary btn-xs" id="btn-download-mcfunction">
+              <span>💾 .mcfunction</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Контент вкладки 1: Игровой чат Minecraft -->
+        <div class="tab-content active" id="tab-preview">
+          <div class="mc-viewport" id="mc-viewport">
+            <div class="mc-chat-screen-full" id="mc-chat-screen">
+              <div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Контент вкладки 2: Экспорт Tellraw -->
+        <div class="tab-content" id="tab-export">
+          <div class="export-sub-toolbar">
             <div class="option-item">
               <label for="export-format">Формат:</label>
               <select id="export-format" class="select-sm">
@@ -827,31 +1152,43 @@ body {
               </select>
             </div>
 
+            <!-- Формат HEX цвета -->
+            <div class="option-item">
+              <label for="hex-format-select" title="Стиль записи hex цвета в JSON">HEX в Tellraw:</label>
+              <select id="hex-format-select" class="select-sm">
+                <option value="no-hash">Без # (color: "ffaa00")</option>
+                <option value="hash">С # (color: "#ffaa00")</option>
+              </select>
+            </div>
+
+            <!-- Селектор (если выключен селектор из конструктора) -->
+            <div class="option-item" id="manual-selector-wrap" style="display:none;">
+              <label for="export-selector">Селектор:</label>
+              <select id="export-selector" class="select-sm">
+                <option value="@a">@a</option>
+                <option value="@p">@p</option>
+                <option value="@s">@s</option>
+                <option value="@r">@r</option>
+              </select>
+            </div>
+
             <!-- Опция звука -->
             <div class="option-item">
               <label class="checkbox-label" title="Добавлять /playsound перед каждой репликой диалога">
                 <input type="checkbox" id="chk-playsound">
                 <span>Со звуком</span>
               </label>
-              <input type="text" id="playsound-input" class="input-sm" value="entity.experience_orb.pickup" placeholder="minecraft:sound" style="display:none; width: 180px;">
+              <input type="text" id="playsound-input" class="input-sm" value="entity.experience_orb.pickup" placeholder="minecraft:sound" style="display:none; width: 170px;">
             </div>
+
+            <span class="copy-status-tip" id="copy-status-tip"></span>
+          </div>
+
+          <div class="output-container">
+            <pre class="export-code" id="export-code-output"></pre>
           </div>
         </div>
 
-        <div class="export-actions-row">
-          <button class="btn btn-success btn-sm" id="btn-copy-all">
-            <span>📋 Скопировать все команды</span>
-          </button>
-          <button class="btn btn-secondary btn-sm" id="btn-download-mcfunction">
-            <span>💾 Скачать .mcfunction</span>
-          </button>
-          <span class="copy-status-tip" id="copy-status-tip"></span>
-        </div>
-
-        <!-- Поле вывода команд -->
-        <div class="output-container">
-          <pre class="export-code" id="export-code-output"></pre>
-        </div>
       </div>
 
     </section>
@@ -859,7 +1196,7 @@ body {
 
   <script>
 /**
- * LoreHelper — Инженерное ядро редактора диалогов и компилятора Tellraw
+ * FluffyLore — Инженерное ядро редактора диалогов и компилятора Tellraw
  */
 
 // Константы цветов Minecraft
@@ -892,6 +1229,12 @@ const MC_FORMATS = {
   'r': { name: 'reset', label: '&r Сброс' }
 };
 
+const DEFAULT_SAMPLE_DIALOGUE = `Широ: Эй, Сенко! Смотри, как великая богиня Широ умеет повелевать молниями!
+Сенко: Широ-сама, пожалуйста, поосторожнее! Вы же разобьёте сервиз для чая~
+*Широ с гордым видом складывает руки на груди и виляет белым пушистым хвостом*
+Широ: Хмф! Ладно-ладно, если ты угостишь меня тем вкуснейшим жареным тофу, я буду паинькой!
+Сенко: Хи-хи, уже накрыто на стол. Приятного аппетита!`;
+
 // Состояние приложения
 const state = {
   characters: [
@@ -905,11 +1248,11 @@ const state = {
       enabled: true
     },
     {
-      id: 'char_vay',
-      trigger: 'Вай',
-      displayName: '&b&lВай',
+      id: 'char_shiro',
+      trigger: 'Широ',
+      displayName: '&f&lШиро',
       separator: ': ',
-      msgColor: '&f',
+      msgColor: '&b',
       prefix: '',
       enabled: true
     },
@@ -924,52 +1267,112 @@ const state = {
     }
   ],
   selector: '@a',
-  customSelector: '',
+  useBuilderSelector: true,
+  builderSelector: {
+    base: '@a',
+    player: '',
+    tag: '',
+    distance: '',
+    limit: '',
+    sort: '',
+    team: '',
+    gamemode: '',
+    custom: ''
+  },
+  hexFormat: 'no-hash', // 'no-hash' (ffaa00) | 'hash' (#ffaa00)
+  chatBgMode: 'world',  // 'world' | 'dark' | 'black'
+  chatOpacity: 65,      // 20..100
   format: 'tellraw',
   playSoundEnabled: false,
   playSoundName: 'entity.experience_orb.pickup',
-  lastFocusedInput: null
+  lastFocusedInput: null,
+  activeUpperTab: 'tab-chars',
+  activeLowerTab: 'tab-preview'
 };
 
 // DOM Элементы
-const els = {
-  scriptInput: document.getElementById('script-input'),
-  lineNumbers: document.getElementById('line-numbers'),
-  lineCountBadge: document.getElementById('line-count-badge'),
-  charCountBadge: document.getElementById('char-count-badge'),
-  commandCountBadge: document.getElementById('command-count-badge'),
-  charRulesList: document.getElementById('character-rules-list'),
-  mcChatScreen: document.getElementById('mc-chat-screen'),
-  exportCodeOutput: document.getElementById('export-code-output'),
-  paletteColors: document.getElementById('palette-colors'),
-  paletteFormats: document.getElementById('palette-formats'),
-  hexColorPicker: document.getElementById('hex-color-picker'),
-  btnInsertHex: document.getElementById('btn-insert-hex'),
-  btnAddCharacter: document.getElementById('btn-add-character'),
-  exportSelector: document.getElementById('export-selector'),
-  customSelectorInput: document.getElementById('custom-selector-input'),
-  exportFormat: document.getElementById('export-format'),
-  chkPlaysound: document.getElementById('chk-playsound'),
-  playsoundInput: document.getElementById('playsound-input'),
-  btnCopyAll: document.getElementById('btn-copy-all'),
-  btnDownloadMcfunction: document.getElementById('btn-download-mcfunction'),
-  copyStatusTip: document.getElementById('copy-status-tip'),
-  btnSampleData: document.getElementById('btn-sample-data'),
-  btnExportProject: document.getElementById('btn-export-project'),
-  fileImportProject: document.getElementById('file-import-project'),
-  btnClearAll: document.getElementById('btn-clear-all'),
-  resizerMain: document.getElementById('resizer-main'),
-  resizerSub: document.getElementById('resizer-sub'),
-  panelLeft: document.getElementById('panel-left'),
-  panelRules: document.getElementById('panel-rules'),
-  workspace: document.getElementById('workspace')
-};
+let els = {};
+
+function initDomRefs() {
+  els = {
+    scriptInput: document.getElementById('script-input'),
+    lineNumbers: document.getElementById('line-numbers'),
+    lineCountBadge: document.getElementById('line-count-badge'),
+    charCountBadge: document.getElementById('char-count-badge'),
+    commandCountBadge: document.getElementById('command-count-badge'),
+    charRulesList: document.getElementById('character-rules-list'),
+    mcViewport: document.getElementById('mc-viewport'),
+    mcChatScreen: document.getElementById('mc-chat-screen'),
+    exportCodeOutput: document.getElementById('export-code-output'),
+    paletteColors: document.getElementById('palette-colors'),
+    paletteFormats: document.getElementById('palette-formats'),
+    hexColorPicker: document.getElementById('hex-color-picker'),
+    btnInsertHex: document.getElementById('btn-insert-hex'),
+    btnAddCharacter: document.getElementById('btn-add-character'),
+    exportSelector: document.getElementById('export-selector'),
+    exportFormat: document.getElementById('export-format'),
+    hexFormatSelect: document.getElementById('hex-format-select'),
+    manualSelectorWrap: document.getElementById('manual-selector-wrap'),
+    chkPlaysound: document.getElementById('chk-playsound'),
+    playsoundInput: document.getElementById('playsound-input'),
+    btnCopyAll: document.getElementById('btn-copy-all'),
+    btnDownloadMcfunction: document.getElementById('btn-download-mcfunction'),
+    copyStatusTip: document.getElementById('copy-status-tip'),
+    btnSampleData: document.getElementById('btn-sample-data'),
+    btnExportProject: document.getElementById('btn-export-project'),
+    fileImportProject: document.getElementById('file-import-project'),
+    btnClearAll: document.getElementById('btn-clear-all'),
+    resizerMain: document.getElementById('resizer-main'),
+    resizerSub: document.getElementById('resizer-sub'),
+    panelLeft: document.getElementById('panel-left'),
+    panelTopSection: document.getElementById('panel-top-section'),
+    workspace: document.getElementById('workspace'),
+    
+    // Вкладки
+    tabBtnChars: document.getElementById('tab-btn-chars'),
+    tabBtnSelector: document.getElementById('tab-btn-selector'),
+    tabChars: document.getElementById('tab-chars'),
+    tabSelector: document.getElementById('tab-selector'),
+    tabBtnPreview: document.getElementById('tab-btn-preview'),
+    tabBtnExport: document.getElementById('tab-btn-export'),
+    tabPreview: document.getElementById('tab-preview'),
+    tabExport: document.getElementById('tab-export'),
+    previewControlsBar: document.getElementById('preview-controls-bar'),
+    exportControlsBar: document.getElementById('export-controls-bar'),
+    
+    // Селектор конструктор
+    selBaseTarget: document.getElementById('sel-base-target'),
+    wrapPlayerName: document.getElementById('wrap-player-name'),
+    selPlayerName: document.getElementById('sel-player-name'),
+    selTag: document.getElementById('sel-tag'),
+    selDistance: document.getElementById('sel-distance'),
+    selLimit: document.getElementById('sel-limit'),
+    selSort: document.getElementById('sel-sort'),
+    selTeam: document.getElementById('sel-team'),
+    selGamemode: document.getElementById('sel-gamemode'),
+    selCustomArgs: document.getElementById('sel-custom-args'),
+    selectorResultPreview: document.getElementById('selector-result-preview'),
+    btnCopySelector: document.getElementById('btn-copy-selector'),
+    chkUseBuilderSelector: document.getElementById('chk-use-builder-selector'),
+
+    // Чат контролы
+    chatBgMode: document.getElementById('chat-bg-mode'),
+    chatOpacitySlider: document.getElementById('chat-opacity-slider'),
+    chatOpacityVal: document.getElementById('chat-opacity-val')
+  };
+}
 
 // --- Инициализация интерфейса ---
 function init() {
+  initDomRefs();
   buildColorPalette();
   loadFromLocalStorage();
+  applyChatViewportControls();
   renderCharacterRules();
+  computeSelector();
+  setupTabs();
+  setupSelectorBuilderEvents();
+  setupChatControls();
   setupEventListeners();
   setupResizers();
   updateEditor();
@@ -1018,12 +1421,240 @@ function insertCodeAtCursor(code) {
   target.selectionStart = target.selectionEnd = start + code.length;
   target.focus();
 
-  // Вызываем обновление
   if (target === els.scriptInput) {
     updateEditor();
   } else {
     target.dispatchEvent(new Event('input', { bubbles: true }));
   }
+}
+
+// --- Управление вкладками ---
+function setupTabs() {
+  // Верхние вкладки
+  const upperTabs = [
+    { btn: els.tabBtnChars, content: els.tabChars, id: 'tab-chars' },
+    { btn: els.tabBtnSelector, content: els.tabSelector, id: 'tab-selector' }
+  ];
+
+  upperTabs.forEach(tab => {
+    if (!tab.btn) return;
+    tab.btn.addEventListener('click', () => {
+      upperTabs.forEach(t => {
+        t.btn.classList.toggle('active', t.id === tab.id);
+        t.content.classList.toggle('active', t.id === tab.id);
+      });
+      state.activeUpperTab = tab.id;
+      saveToLocalStorage();
+    });
+  });
+
+  // Нижние вкладки
+  const lowerTabs = [
+    { btn: els.tabBtnPreview, content: els.tabPreview, id: 'tab-preview' },
+    { btn: els.tabBtnExport, content: els.tabExport, id: 'tab-export' }
+  ];
+
+  lowerTabs.forEach(tab => {
+    if (!tab.btn) return;
+    tab.btn.addEventListener('click', () => {
+      lowerTabs.forEach(t => {
+        t.btn.classList.toggle('active', t.id === tab.id);
+        t.content.classList.toggle('active', t.id === tab.id);
+      });
+      state.activeLowerTab = tab.id;
+      updateControlBarsVisibility();
+      saveToLocalStorage();
+    });
+  });
+
+  updateControlBarsVisibility();
+}
+
+function updateControlBarsVisibility() {
+  if (state.activeLowerTab === 'tab-preview') {
+    if (els.previewControlsBar) els.previewControlsBar.style.display = 'flex';
+    if (els.exportControlsBar) els.exportControlsBar.style.display = 'none';
+  } else {
+    if (els.previewControlsBar) els.previewControlsBar.style.display = 'none';
+    if (els.exportControlsBar) els.exportControlsBar.style.display = 'flex';
+  }
+}
+
+// --- Конструктор селектора Minecraft ---
+function computeSelector() {
+  const base = els.selBaseTarget ? els.selBaseTarget.value : '@a';
+  const player = els.selPlayerName ? els.selPlayerName.value.trim() : '';
+  const tag = els.selTag ? els.selTag.value.trim() : '';
+  const distance = els.selDistance ? els.selDistance.value.trim() : '';
+  const limit = els.selLimit ? els.selLimit.value.trim() : '';
+  const sort = els.selSort ? els.selSort.value.trim() : '';
+  const team = els.selTeam ? els.selTeam.value.trim() : '';
+  const gamemode = els.selGamemode ? els.selGamemode.value.trim() : '';
+  const custom = els.selCustomArgs ? els.selCustomArgs.value.trim() : '';
+
+  state.builderSelector = { base, player, tag, distance, limit, sort, team, gamemode, custom };
+
+  let args = [];
+
+  if (tag) {
+    args.push(tag.startsWith('tag=') ? tag : `tag=${tag}`);
+  }
+  if (distance) {
+    args.push(distance.startsWith('distance=') ? distance : `distance=${distance}`);
+  }
+  if (limit) {
+    args.push(limit.startsWith('limit=') ? limit : `limit=${limit}`);
+  }
+  if (sort) {
+    args.push(`sort=${sort}`);
+  }
+  if (team) {
+    args.push(team.startsWith('team=') ? team : `team=${team}`);
+  }
+  if (gamemode) {
+    args.push(`gamemode=${gamemode}`);
+  }
+  if (custom) {
+    const customList = custom.split(',').map(s => s.trim()).filter(Boolean);
+    args.push(...customList);
+  }
+
+  let finalSelector = '@a';
+
+  if (base === 'player') {
+    if (args.length > 0) {
+      const nameArg = player ? `name=${player}` : '';
+      const allArgs = nameArg ? [nameArg, ...args] : args;
+      finalSelector = `@p[${allArgs.join(',')}]`;
+    } else {
+      finalSelector = player || 'Player';
+    }
+  } else {
+    if (args.length > 0) {
+      finalSelector = `${base}[${args.join(',')}]`;
+    } else {
+      finalSelector = base;
+    }
+  }
+
+  if (els.selectorResultPreview) {
+    els.selectorResultPreview.textContent = finalSelector;
+  }
+
+  return finalSelector;
+}
+
+function setupSelectorBuilderEvents() {
+  const inputs = [
+    els.selBaseTarget, els.selPlayerName, els.selTag, els.selDistance,
+    els.selLimit, els.selSort, els.selTeam, els.selGamemode, els.selCustomArgs
+  ];
+
+  inputs.forEach(input => {
+    if (!input) return;
+    input.addEventListener('input', () => {
+      computeSelector();
+      updateEditor();
+    });
+    input.addEventListener('change', () => {
+      computeSelector();
+      updateEditor();
+    });
+  });
+
+  if (els.selBaseTarget) {
+    els.selBaseTarget.addEventListener('change', () => {
+      const isPlayer = els.selBaseTarget.value === 'player';
+      if (els.wrapPlayerName) {
+        els.wrapPlayerName.style.display = isPlayer ? 'flex' : 'none';
+      }
+      computeSelector();
+      updateEditor();
+    });
+  }
+
+  if (els.btnCopySelector) {
+    els.btnCopySelector.addEventListener('click', async () => {
+      const sel = els.selectorResultPreview.textContent;
+      try {
+        await navigator.clipboard.writeText(sel);
+        showCopyToast(`📋 Селектор ${sel} скопирован!`);
+      } catch (err) {
+        const ta = document.createElement('textarea');
+        ta.value = sel;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showCopyToast(`📋 Селектор ${sel} скопирован!`);
+      }
+    });
+  }
+
+  if (els.chkUseBuilderSelector) {
+    els.chkUseBuilderSelector.addEventListener('change', (e) => {
+      state.useBuilderSelector = e.target.checked;
+      if (els.manualSelectorWrap) {
+        els.manualSelectorWrap.style.display = state.useBuilderSelector ? 'none' : 'flex';
+      }
+      updateEditor();
+    });
+  }
+}
+
+// --- Управление видовым экраном чата ---
+function setupChatControls() {
+  if (els.chatBgMode) {
+    els.chatBgMode.addEventListener('change', (e) => {
+      state.chatBgMode = e.target.value;
+      applyChatViewportControls();
+      saveToLocalStorage();
+    });
+  }
+
+  if (els.chatOpacitySlider) {
+    els.chatOpacitySlider.addEventListener('input', (e) => {
+      state.chatOpacity = parseInt(e.target.value, 10);
+      applyChatViewportControls();
+      saveToLocalStorage();
+    });
+  }
+
+  if (els.hexFormatSelect) {
+    els.hexFormatSelect.addEventListener('change', (e) => {
+      state.hexFormat = e.target.value;
+      updateEditor();
+    });
+  }
+}
+
+function applyChatViewportControls() {
+  if (els.mcViewport) {
+    els.mcViewport.classList.remove('bg-world', 'bg-dark', 'bg-black');
+    els.mcViewport.classList.add(`bg-${state.chatBgMode || 'world'}`);
+  }
+
+  if (els.mcChatScreen) {
+    const alpha = (state.chatOpacity || 65) / 100;
+    els.mcChatScreen.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
+  }
+
+  if (els.chatOpacityVal) {
+    els.chatOpacityVal.textContent = `${state.chatOpacity || 65}%`;
+  }
+  if (els.chatOpacitySlider) {
+    els.chatOpacitySlider.value = state.chatOpacity || 65;
+  }
+  if (els.chatBgMode) {
+    els.chatBgMode.value = state.chatBgMode || 'world';
+  }
+}
+
+function getEffectiveSelector() {
+  if (state.useBuilderSelector) {
+    return computeSelector();
+  }
+  return els.exportSelector ? els.exportSelector.value : '@a';
 }
 
 // --- Парсинг цветов и форматирования Minecraft ---
@@ -1050,7 +1681,7 @@ function parseMinecraftTokens(rawText, inheritedColor = null, inheritedFormats =
 
   let i = 0;
   while (i < rawText.length) {
-    // Проверка HEX формата &#rrggbb или #rrggbb
+    // Проверка HEX формата &#rrggbb
     if (rawText.startsWith('&#', i) && i + 8 <= rawText.length) {
       const hexCandidate = rawText.substr(i + 2, 6);
       if (/^[0-9a-fA-F]{6}$/.test(hexCandidate)) {
@@ -1069,7 +1700,6 @@ function parseMinecraftTokens(rawText, inheritedColor = null, inheritedFormats =
       if (MC_COLORS[code]) {
         flush();
         currentColor = MC_COLORS[code].name;
-        // В Minecraft выбор цвета сбрасывает текущие стили жирности/курсива
         currentFormats = {};
         i += 2;
         continue;
@@ -1125,15 +1755,27 @@ function tokensToHtml(tokens) {
   }).join('');
 }
 
+// Сериализация цвета для Tellraw JSON с учётом опции хэша
+function serializeTellrawColor(color) {
+  if (!color) return null;
+  if (color.startsWith('#')) {
+    const rawHex = color.substring(1).toLowerCase();
+    return state.hexFormat === 'hash' ? `#${rawHex}` : rawHex;
+  }
+  return color;
+}
+
 // Преобразование токенов в Minecraft Tellraw JSON структуру
 function tokensToTellrawJson(tokens) {
   if (!tokens || tokens.length === 0) return '[""]';
 
-  const parts = ['']; // Пустая строка в начале — стандарт безопасности tellraw
+  const parts = [''];
   tokens.forEach(tok => {
     if (!tok.text) return;
     const obj = { text: tok.text };
-    if (tok.color) obj.color = tok.color;
+    if (tok.color) {
+      obj.color = serializeTellrawColor(tok.color);
+    }
     if (tok.bold) obj.bold = true;
     if (tok.italic) obj.italic = true;
     if (tok.underlined) obj.underlined = true;
@@ -1152,8 +1794,11 @@ function tokensToLegacyString(tokens) {
     let prefix = '';
     if (tok.color) {
       const entry = Object.entries(MC_COLORS).find(([k, v]) => v.name === tok.color);
-      if (entry) prefix += `§${entry[0]}`;
-      else if (tok.color.startsWith('#')) prefix += `§x` + tok.color.slice(1).split('').map(c => `§${c}`).join('');
+      if (entry) {
+        prefix += `§${entry[0]}`;
+      } else if (tok.color.startsWith('#')) {
+        prefix += `§x` + tok.color.slice(1).split('').map(c => `§${c}`).join('');
+      }
     }
     if (tok.bold) prefix += '§l';
     if (tok.italic) prefix += '§o';
@@ -1179,7 +1824,7 @@ function processScriptLines(text) {
     let characterName = '';
     let speechText = rawLine;
 
-    // Проверяем авторскую ремарку в звездочках *действие*
+    // Авторская ремарка в звездочках *действие*
     if (rawLine.trim().startsWith('*') && rawLine.trim().endsWith('*') && rawLine.trim().length > 1) {
       const narratorRule = state.characters.find(c => c.trigger === '*' && c.enabled);
       if (narratorRule) {
@@ -1187,12 +1832,10 @@ function processScriptLines(text) {
         speechText = rawLine.trim();
       }
     } else {
-      // Ищем совпадение персонажа
       for (const rule of state.characters) {
         if (!rule.enabled || !rule.trigger || rule.trigger === '*') continue;
 
         const trig = rule.trigger;
-        // Разделители: ":", "»", ">", "-", "—" или пробел
         const pattern = new RegExp(`^(${escapeRegExp(trig)})([:»>—\\-]\\s*|\\s+)(.*)$`, 'i');
         const match = rawLine.match(pattern);
 
@@ -1208,15 +1851,12 @@ function processScriptLines(text) {
     let combinedTokens = [];
 
     if (matchedRule && matchedRule.trigger !== '*') {
-      // Персонаж распознан
       const prefixStr = matchedRule.prefix || '';
       const nameStr = matchedRule.displayName || matchedRule.trigger;
       const sepStr = matchedRule.separator !== undefined ? matchedRule.separator : ': ';
 
-      // Токены имени
       const nameTokens = parseMinecraftTokens(prefixStr + nameStr + sepStr);
 
-      // Токены реплики (с базовым цветом реплики персонажа)
       let defaultMsgColor = null;
       let defaultFormats = {};
       if (matchedRule.msgColor) {
@@ -1236,7 +1876,6 @@ function processScriptLines(text) {
       const speechTokens = parseMinecraftTokens(speechText, defaultMsgColor, defaultFormats);
       combinedTokens = [...nameTokens, ...speechTokens];
     } else if (matchedRule && matchedRule.trigger === '*') {
-      // Авторская ремарка
       let defaultColor = 'gray';
       let defaultFormats = { italic: true };
       if (matchedRule.msgColor) {
@@ -1248,7 +1887,6 @@ function processScriptLines(text) {
       }
       combinedTokens = parseMinecraftTokens(speechText, defaultColor, defaultFormats);
     } else {
-      // Обычная строка без персонажа
       combinedTokens = parseMinecraftTokens(rawLine);
     }
 
@@ -1264,31 +1902,36 @@ function processScriptLines(text) {
 
 // --- Главное обновление редактора ---
 function updateEditor() {
-  const scriptText = els.scriptInput.value;
+  const scriptText = els.scriptInput ? els.scriptInput.value : '';
   const lines = scriptText.split('\n');
 
-  // 1. Номера строк
-  els.lineNumbers.textContent = Array.from({ length: lines.length }, (_, i) => i + 1).join('\n');
-  els.lineCountBadge.textContent = `${lines.length} ${getNoun(lines.length, 'строка', 'строки', 'строк')}`;
-
-  // 2. Обработка сценария
-  const processed = processScriptLines(scriptText);
-  els.commandCountBadge.textContent = `${processed.length} ${getNoun(processed.length, 'команда', 'команды', 'команд')}`;
-
-  // 3. Minecraft Chat Preview
-  if (processed.length === 0) {
-    els.mcChatScreen.innerHTML = '<div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>';
-  } else {
-    els.mcChatScreen.innerHTML = processed.map(item => {
-      const html = tokensToHtml(item.tokens);
-      return `<div class="mc-chat-line">${html}</div>`;
-    }).join('');
-    // Прокручиваем чат вниз к последней реплике
-    els.mcChatScreen.scrollTop = els.mcChatScreen.scrollHeight;
+  if (els.lineNumbers) {
+    els.lineNumbers.textContent = Array.from({ length: lines.length }, (_, i) => i + 1).join('\n');
+  }
+  if (els.lineCountBadge) {
+    els.lineCountBadge.textContent = `${lines.length} ${getNoun(lines.length, 'строка', 'строки', 'строк')}`;
   }
 
-  // 4. Генерация вывода команд
-  const selector = state.selector === 'custom' ? (state.customSelector || '@a') : state.selector;
+  const processed = processScriptLines(scriptText);
+  if (els.commandCountBadge) {
+    els.commandCountBadge.textContent = `${processed.length} ${getNoun(processed.length, 'команда', 'команды', 'команд')}`;
+  }
+
+  // Превью чата
+  if (els.mcChatScreen) {
+    if (processed.length === 0) {
+      els.mcChatScreen.innerHTML = '<div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>';
+    } else {
+      els.mcChatScreen.innerHTML = processed.map(item => {
+        const html = tokensToHtml(item.tokens);
+        return `<div class="mc-chat-line">${html}</div>`;
+      }).join('');
+      els.mcChatScreen.scrollTop = els.mcChatScreen.scrollHeight;
+    }
+  }
+
+  // Генерация команд
+  const selector = getEffectiveSelector();
   const commandLines = [];
 
   processed.forEach(item => {
@@ -1306,22 +1949,25 @@ function updateEditor() {
     }
   });
 
-  els.exportCodeOutput.textContent = commandLines.join('\n');
+  if (els.exportCodeOutput) {
+    els.exportCodeOutput.textContent = commandLines.join('\n');
+  }
 
-  // 5. Сохранение в LocalStorage
   saveToLocalStorage();
 }
 
 // --- Рендер карточек персонажей ---
 function renderCharacterRules() {
+  if (!els.charRulesList) return;
   els.charRulesList.innerHTML = '';
-  els.charCountBadge.textContent = `${state.characters.length} ${getNoun(state.characters.length, 'персонаж', 'персонажа', 'персонажей')}`;
+  if (els.charCountBadge) {
+    els.charCountBadge.textContent = `${state.characters.length} ${getNoun(state.characters.length, 'персонаж', 'персонажа', 'персонажей')}`;
+  }
 
   state.characters.forEach((char, index) => {
     const card = document.createElement('div');
     card.className = 'char-rule-card';
 
-    // Превью имени
     const namePreviewTokens = parseMinecraftTokens((char.displayName || char.trigger) + (char.separator || ''));
     const namePreviewHtml = tokensToHtml(namePreviewTokens);
 
@@ -1349,7 +1995,6 @@ function renderCharacterRules() {
       <button type="button" class="btn-icon-del" title="Удалить персонажа">✕</button>
     `;
 
-    // Инпуты карточки
     const inpTrigger = card.querySelector('.char-trigger');
     const inpName = card.querySelector('.char-name');
     const inpColor = card.querySelector('.char-color');
@@ -1363,7 +2008,6 @@ function renderCharacterRules() {
         char.displayName = inpName.value;
         char.msgColor = inpColor.value;
         char.separator = inpSep.value;
-        // Обновляем превью имя
         const updatedTokens = parseMinecraftTokens((char.displayName || char.trigger) + (char.separator || ''));
         card.querySelector('.char-preview-pill').innerHTML = tokensToHtml(updatedTokens) || '&nbsp;';
         updateEditor();
@@ -1382,236 +2026,247 @@ function renderCharacterRules() {
 
 // --- Слушатели событий ---
 function setupEventListeners() {
-  // Скролл номеров строк вместе с редактором
-  els.scriptInput.addEventListener('scroll', () => {
-    els.lineNumbers.scrollTop = els.scriptInput.scrollTop;
-  });
-
-  els.scriptInput.addEventListener('focus', () => {
-    state.lastFocusedInput = els.scriptInput;
-  });
-
-  els.scriptInput.addEventListener('input', updateEditor);
-
-  // Добавление персонажа
-  els.btnAddCharacter.addEventListener('click', () => {
-    state.characters.push({
-      id: 'char_' + Date.now(),
-      trigger: 'Персонаж ' + (state.characters.length + 1),
-      displayName: '&aПерсонаж ' + (state.characters.length + 1),
-      separator: ': ',
-      msgColor: '&f',
-      prefix: '',
-      enabled: true
+  if (els.scriptInput) {
+    els.scriptInput.addEventListener('scroll', () => {
+      if (els.lineNumbers) els.lineNumbers.scrollTop = els.scriptInput.scrollTop;
     });
-    renderCharacterRules();
-    updateEditor();
-  });
 
-  // Вставка HEX цвета
-  els.btnInsertHex.addEventListener('click', () => {
-    const hex = els.hexColorPicker.value;
-    insertCodeAtCursor(`&#${hex.replace('#', '')}`);
-  });
+    els.scriptInput.addEventListener('focus', () => {
+      state.lastFocusedInput = els.scriptInput;
+    });
 
-  // Селектор
-  els.exportSelector.addEventListener('change', (e) => {
-    state.selector = e.target.value;
-    if (state.selector === 'custom') {
-      els.customSelectorInput.style.display = 'inline-block';
-      els.customSelectorInput.focus();
-    } else {
-      els.customSelectorInput.style.display = 'none';
-    }
-    updateEditor();
-  });
+    els.scriptInput.addEventListener('input', updateEditor);
+  }
 
-  els.customSelectorInput.addEventListener('input', (e) => {
-    state.customSelector = e.target.value;
-    updateEditor();
-  });
-
-  // Формат
-  els.exportFormat.addEventListener('change', (e) => {
-    state.format = e.target.value;
-    updateEditor();
-  });
-
-  // Звук
-  els.chkPlaysound.addEventListener('change', (e) => {
-    state.playSoundEnabled = e.target.checked;
-    els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
-    updateEditor();
-  });
-
-  els.playsoundInput.addEventListener('input', (e) => {
-    state.playSoundName = e.target.value;
-    updateEditor();
-  });
-
-  // Копирование всех команд
-  els.btnCopyAll.addEventListener('click', async () => {
-    const text = els.exportCodeOutput.textContent;
-    if (!text.trim()) return;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      showCopyToast('✅ Скопировано в буфер обмена!');
-    } catch (err) {
-      // Fallback
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      showCopyToast('✅ Скопировано!');
-    }
-  });
-
-  // Скачать .mcfunction
-  els.btnDownloadMcfunction.addEventListener('click', () => {
-    const text = els.exportCodeOutput.textContent;
-    if (!text.trim()) return;
-
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'dialogue.mcfunction';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showCopyToast('💾 dialogue.mcfunction скачан!');
-  });
-
-  // Пример диалога
-  els.btnSampleData.addEventListener('click', () => {
-    els.scriptInput.value = `Сенко: Добро пожаловать домой, Вай! Чай уже готов~
-Вай: Спасибо, Сенко! Как прошёл твой день?
-*На плите тихо и уютно шумит медный чайник с жасминовым чаем*
-Сенко: Всё замечательно! Садись скорее, я приготовила жареный тофу и налила тебе полную чашку!
-Вай: Ты просто волшебная! Рядом с тобой любая усталость мигом улетучивается.
-Сенко: Хи-хи, на то я и лиса-помощница! А теперь кушай и отдыхай, ты сегодня славно потрудился~`;
-    updateEditor();
-  });
-
-  // Очистка
-  els.btnClearAll.addEventListener('click', () => {
-    if (confirm('Очистить текст сценария?')) {
-      els.scriptInput.value = '';
+  if (els.btnAddCharacter) {
+    els.btnAddCharacter.addEventListener('click', () => {
+      state.characters.push({
+        id: 'char_' + Date.now(),
+        trigger: 'Персонаж ' + (state.characters.length + 1),
+        displayName: '&aПерсонаж ' + (state.characters.length + 1),
+        separator: ': ',
+        msgColor: '&f',
+        prefix: '',
+        enabled: true
+      });
+      renderCharacterRules();
       updateEditor();
-    }
-  });
+    });
+  }
 
-  // Экспорт проекта в JSON
-  els.btnExportProject.addEventListener('click', () => {
-    const project = {
-      version: 1,
-      script: els.scriptInput.value,
-      characters: state.characters,
-      selector: state.selector,
-      customSelector: state.customSelector,
-      format: state.format,
-      playSoundEnabled: state.playSoundEnabled,
-      playSoundName: state.playSoundName
-    };
+  if (els.btnInsertHex) {
+    els.btnInsertHex.addEventListener('click', () => {
+      const hex = els.hexColorPicker.value;
+      insertCodeAtCursor(`&#${hex.replace('#', '')}`);
+    });
+  }
 
-    const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fluffylore_project.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
+  if (els.exportSelector) {
+    els.exportSelector.addEventListener('change', (e) => {
+      state.selector = e.target.value;
+      updateEditor();
+    });
+  }
 
-  // Импорт проекта
-  els.fileImportProject.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  if (els.exportFormat) {
+    els.exportFormat.addEventListener('change', (e) => {
+      state.format = e.target.value;
+      updateEditor();
+    });
+  }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        if (data.script !== undefined) els.scriptInput.value = data.script;
-        if (Array.isArray(data.characters)) state.characters = data.characters;
-        if (data.selector) state.selector = data.selector;
-        if (data.customSelector) state.customSelector = data.customSelector;
-        if (data.format) state.format = data.format;
-        if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
-        if (data.playSoundName) state.playSoundName = data.playSoundName;
-
-        els.exportSelector.value = state.selector;
-        els.customSelectorInput.value = state.customSelector || '';
-        els.customSelectorInput.style.display = state.selector === 'custom' ? 'inline-block' : 'none';
-        els.exportFormat.value = state.format;
-        els.chkPlaysound.checked = state.playSoundEnabled;
+  if (els.chkPlaysound) {
+    els.chkPlaysound.addEventListener('change', (e) => {
+      state.playSoundEnabled = e.target.checked;
+      if (els.playsoundInput) {
         els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
-        els.playsoundInput.value = state.playSoundName;
-
-        renderCharacterRules();
-        updateEditor();
-        showCopyToast('📂 Проект успешно загружен!');
-      } catch (err) {
-        alert('Ошибка при чтении файла проекта: ' + err.message);
       }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  });
+      updateEditor();
+    });
+  }
+
+  if (els.playsoundInput) {
+    els.playsoundInput.addEventListener('input', (e) => {
+      state.playSoundName = e.target.value;
+      updateEditor();
+    });
+  }
+
+  if (els.btnCopyAll) {
+    els.btnCopyAll.addEventListener('click', async () => {
+      const text = els.exportCodeOutput.textContent;
+      if (!text.trim()) return;
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showCopyToast('✅ Скопировано в буфер обмена!');
+      } catch (err) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showCopyToast('✅ Скопировано!');
+      }
+    });
+  }
+
+  if (els.btnDownloadMcfunction) {
+    els.btnDownloadMcfunction.addEventListener('click', () => {
+      const text = els.exportCodeOutput.textContent;
+      if (!text.trim()) return;
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dialogue.mcfunction';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showCopyToast('💾 dialogue.mcfunction скачан!');
+    });
+  }
+
+  if (els.btnSampleData) {
+    els.btnSampleData.addEventListener('click', () => {
+      if (els.scriptInput) {
+        els.scriptInput.value = DEFAULT_SAMPLE_DIALOGUE;
+        updateEditor();
+      }
+    });
+  }
+
+  if (els.btnClearAll) {
+    els.btnClearAll.addEventListener('click', () => {
+      if (confirm('Очистить текст сценария?')) {
+        if (els.scriptInput) els.scriptInput.value = '';
+        updateEditor();
+      }
+    });
+  }
+
+  if (els.btnExportProject) {
+    els.btnExportProject.addEventListener('click', () => {
+      const project = {
+        version: 2,
+        script: els.scriptInput ? els.scriptInput.value : '',
+        characters: state.characters,
+        selector: state.selector,
+        useBuilderSelector: state.useBuilderSelector,
+        builderSelector: state.builderSelector,
+        hexFormat: state.hexFormat,
+        chatBgMode: state.chatBgMode,
+        chatOpacity: state.chatOpacity,
+        format: state.format,
+        playSoundEnabled: state.playSoundEnabled,
+        playSoundName: state.playSoundName
+      };
+
+      const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'fluffylore_project.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (els.fileImportProject) {
+    els.fileImportProject.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (data.script !== undefined && els.scriptInput) els.scriptInput.value = data.script;
+          if (Array.isArray(data.characters)) state.characters = data.characters;
+          if (data.selector) state.selector = data.selector;
+          if (data.useBuilderSelector !== undefined) state.useBuilderSelector = data.useBuilderSelector;
+          if (data.builderSelector) state.builderSelector = data.builderSelector;
+          if (data.hexFormat) state.hexFormat = data.hexFormat;
+          if (data.chatBgMode) state.chatBgMode = data.chatBgMode;
+          if (data.chatOpacity !== undefined) state.chatOpacity = data.chatOpacity;
+          if (data.format) state.format = data.format;
+          if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
+          if (data.playSoundName) state.playSoundName = data.playSoundName;
+
+          applyStateToUI();
+          renderCharacterRules();
+          computeSelector();
+          updateEditor();
+          showCopyToast('📂 Проект успешно загружен!');
+        } catch (err) {
+          alert('Ошибка при чтении файла проекта: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+  }
 }
 
 // --- Управление Drag-сплиттерами ---
 function setupResizers() {
-  // Горизонтальный сплиттер (между левой и правой колонкой)
   let isDraggingMain = false;
-  els.resizerMain.addEventListener('mousedown', (e) => {
-    isDraggingMain = true;
-    els.resizerMain.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-  });
+  if (els.resizerMain) {
+    els.resizerMain.addEventListener('mousedown', () => {
+      isDraggingMain = true;
+      els.resizerMain.classList.add('dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+  }
 
-  // Вертикальный сплиттер (между верхней и нижней частью справа)
   let isDraggingSub = false;
-  els.resizerSub.addEventListener('mousedown', (e) => {
-    isDraggingSub = true;
-    els.resizerSub.classList.add('dragging');
-    document.body.style.cursor = 'row-resize';
-  });
+  if (els.resizerSub) {
+    els.resizerSub.addEventListener('mousedown', () => {
+      isDraggingSub = true;
+      els.resizerSub.classList.add('dragging');
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+    });
+  }
 
   window.addEventListener('mousemove', (e) => {
-    if (isDraggingMain) {
+    if (isDraggingMain && els.workspace && els.panelLeft) {
       const containerWidth = els.workspace.clientWidth;
       const newWidth = (e.clientX / containerWidth) * 100;
       if (newWidth > 20 && newWidth < 80) {
         els.panelLeft.style.width = `${newWidth}%`;
       }
     }
-    if (isDraggingSub) {
+    if (isDraggingSub && els.panelTopSection) {
       const rightPanel = document.getElementById('panel-right');
-      const rect = rightPanel.getBoundingClientRect();
-      const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
-      if (newHeight > 25 && newHeight < 85) {
-        els.panelRules.style.height = `${newHeight}%`;
+      if (rightPanel) {
+        const rect = rightPanel.getBoundingClientRect();
+        const newHeight = ((e.clientY - rect.top) / rect.height) * 100;
+        if (newHeight > 20 && newHeight < 80) {
+          els.panelTopSection.style.height = `${newHeight}%`;
+        }
       }
     }
   });
 
   window.addEventListener('mouseup', () => {
-    if (isDraggingMain) {
+    if (isDraggingMain && els.resizerMain) {
       isDraggingMain = false;
       els.resizerMain.classList.remove('dragging');
       document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     }
-    if (isDraggingSub) {
+    if (isDraggingSub && els.resizerSub) {
       isDraggingSub = false;
       els.resizerSub.classList.remove('dragging');
       document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     }
   });
 }
@@ -1634,10 +2289,11 @@ function startObfuscationLoop() {
 
 // --- Вспомогательные функции ---
 function showCopyToast(msg) {
+  if (!els.copyStatusTip) return;
   els.copyStatusTip.textContent = msg;
   els.copyStatusTip.style.opacity = '1';
   setTimeout(() => {
-    els.copyStatusTip.style.opacity = '0';
+    if (els.copyStatusTip) els.copyStatusTip.style.opacity = '0';
   }, 2200);
 }
 
@@ -1659,46 +2315,126 @@ function getNoun(number, one, two, five) {
   return five;
 }
 
-// Сохранение и загрузка LocalStorage
+// --- LocalStorage ---
 function saveToLocalStorage() {
   try {
     const data = {
-      script: els.scriptInput.value,
+      script: els.scriptInput ? els.scriptInput.value : '',
       characters: state.characters,
       selector: state.selector,
-      customSelector: state.customSelector,
+      useBuilderSelector: state.useBuilderSelector,
+      builderSelector: state.builderSelector,
+      hexFormat: state.hexFormat,
+      chatBgMode: state.chatBgMode,
+      chatOpacity: state.chatOpacity,
       format: state.format,
       playSoundEnabled: state.playSoundEnabled,
-      playSoundName: state.playSoundName
+      playSoundName: state.playSoundName,
+      activeUpperTab: state.activeUpperTab,
+      activeLowerTab: state.activeLowerTab
     };
     localStorage.setItem('fluffylore_state', JSON.stringify(data));
   } catch (e) {}
 }
 
+function applyStateToUI() {
+  if (els.exportSelector) els.exportSelector.value = state.selector || '@a';
+  if (els.exportFormat) els.exportFormat.value = state.format || 'tellraw';
+  if (els.hexFormatSelect) els.hexFormatSelect.value = state.hexFormat || 'no-hash';
+  if (els.chkPlaysound) els.chkPlaysound.checked = !!state.playSoundEnabled;
+  if (els.playsoundInput) {
+    els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
+    els.playsoundInput.value = state.playSoundName || 'entity.experience_orb.pickup';
+  }
+
+  if (els.chkUseBuilderSelector) {
+    els.chkUseBuilderSelector.checked = state.useBuilderSelector;
+  }
+  if (els.manualSelectorWrap) {
+    els.manualSelectorWrap.style.display = state.useBuilderSelector ? 'none' : 'flex';
+  }
+
+  if (state.builderSelector) {
+    if (els.selBaseTarget) els.selBaseTarget.value = state.builderSelector.base || '@a';
+    if (els.selPlayerName) els.selPlayerName.value = state.builderSelector.player || '';
+    if (els.selTag) els.selTag.value = state.builderSelector.tag || '';
+    if (els.selDistance) els.selDistance.value = state.builderSelector.distance || '';
+    if (els.selLimit) els.selLimit.value = state.builderSelector.limit || '';
+    if (els.selSort) els.selSort.value = state.builderSelector.sort || '';
+    if (els.selTeam) els.selTeam.value = state.builderSelector.team || '';
+    if (els.selGamemode) els.selGamemode.value = state.builderSelector.gamemode || '';
+    if (els.selCustomArgs) els.selCustomArgs.value = state.builderSelector.custom || '';
+
+    if (els.wrapPlayerName) {
+      els.wrapPlayerName.style.display = (state.builderSelector.base === 'player') ? 'flex' : 'none';
+    }
+  }
+
+  applyChatViewportControls();
+}
+
 function loadFromLocalStorage() {
   try {
     const saved = localStorage.getItem('fluffylore_state') || localStorage.getItem('lorehelper_state');
-    if (!saved) return;
+    if (!saved) {
+      if (els.scriptInput && !els.scriptInput.value) {
+        els.scriptInput.value = DEFAULT_SAMPLE_DIALOGUE;
+      }
+      return;
+    }
     const data = JSON.parse(saved);
-    if (data.script !== undefined) els.scriptInput.value = data.script;
-    if (Array.isArray(data.characters) && data.characters.length > 0) state.characters = data.characters;
+    if (data.script !== undefined && els.scriptInput) els.scriptInput.value = data.script;
+
+    if (Array.isArray(data.characters) && data.characters.length > 0) {
+      state.characters = data.characters.map(char => {
+        // Миграция старого персонажа Вай на Широ
+        if (char.trigger === 'Вай') {
+          return {
+            ...char,
+            id: 'char_shiro',
+            trigger: 'Широ',
+            displayName: '&f&lШиро',
+            msgColor: '&b'
+          };
+        }
+        return char;
+      });
+    }
+
     if (data.selector) state.selector = data.selector;
-    if (data.customSelector) state.customSelector = data.customSelector;
+    if (data.useBuilderSelector !== undefined) state.useBuilderSelector = data.useBuilderSelector;
+    if (data.builderSelector) state.builderSelector = { ...state.builderSelector, ...data.builderSelector };
+    if (data.hexFormat) state.hexFormat = data.hexFormat;
+    if (data.chatBgMode) state.chatBgMode = data.chatBgMode;
+    if (data.chatOpacity !== undefined) state.chatOpacity = data.chatOpacity;
     if (data.format) state.format = data.format;
     if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
     if (data.playSoundName) state.playSoundName = data.playSoundName;
+    if (data.activeUpperTab) state.activeUpperTab = data.activeUpperTab;
+    if (data.activeLowerTab) state.activeLowerTab = data.activeLowerTab;
 
-    els.exportSelector.value = state.selector;
-    els.customSelectorInput.value = state.customSelector || '';
-    els.customSelectorInput.style.display = state.selector === 'custom' ? 'inline-block' : 'none';
-    els.exportFormat.value = state.format;
-    els.chkPlaysound.checked = state.playSoundEnabled;
-    els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
-    els.playsoundInput.value = state.playSoundName;
+    applyStateToUI();
+
+    // Восстановление активных вкладок
+    if (state.activeUpperTab && els.tabBtnChars && els.tabBtnSelector) {
+      const isChars = state.activeUpperTab === 'tab-chars';
+      els.tabBtnChars.classList.toggle('active', isChars);
+      els.tabChars.classList.toggle('active', isChars);
+      els.tabBtnSelector.classList.toggle('active', !isChars);
+      els.tabSelector.classList.toggle('active', !isChars);
+    }
+
+    if (state.activeLowerTab && els.tabBtnPreview && els.tabBtnExport) {
+      const isPreview = state.activeLowerTab === 'tab-preview';
+      els.tabBtnPreview.classList.toggle('active', isPreview);
+      els.tabPreview.classList.toggle('active', isPreview);
+      els.tabBtnExport.classList.toggle('active', !isPreview);
+      els.tabExport.classList.toggle('active', !isPreview);
+      updateControlBarsVisibility();
+    }
   } catch (e) {}
 }
 
-// Запуск при загрузке страницы
 window.addEventListener('DOMContentLoaded', init);
 
 </script>
