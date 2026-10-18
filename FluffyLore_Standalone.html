@@ -3502,6 +3502,25 @@ function buildOneCommandLayers(processed, selector) {
   // Кнопка на боку стартового блока, запускающая цепь на восток:
   allSetblocks.push(`setblock ~1 ~ ~0 stone_button[face=wall,facing=west]`);
 
+  // Вспомогательная функция безопасного перехода на следующий шаг дорожки с авто-поворотом змейки
+  const advanceStep = () => {
+    const nextX = curX + dirX;
+    if (Math.abs(nextX) > MAX_ROW_LENGTH) {
+      // Ставим поворотную редстоун-перемычку между текущим рядом и новым рядом (Z + 1 и Z + 2):
+      allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
+      allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
+
+      curZ += 2;
+      allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+      allSetblocks.push(`setblock ~${curX} ~ ~${curZ} redstone_wire`);
+
+      dirX = -dirX; // разворот в противоположную сторону!
+      curX += dirX;
+    } else {
+      curX = nextX;
+    }
+  };
+
   actions.forEach((act, actIdx) => {
     // 2.1. Если перед действием есть задержка [wait: N]
     if (actIdx > 0 && act.delayBefore > 0) {
@@ -3510,60 +3529,21 @@ function buildOneCommandLayers(processed, selector) {
         const repeaterDelay = Math.min(Math.max(Math.round(ticksLeft / 2), 1), 4);
         ticksLeft -= repeaterDelay * 2;
 
-        // Делаем шаг в текущем направлении
-        const prevX = curX;
-        const prevZ = curZ;
-        curX += dirX;
-
-        // Поворот змейки на соседний ряд при достижении границы
-        if (Math.abs(curX) > MAX_ROW_LENGTH) {
-          curX = prevX;
-          // Поворотный редстоун-мостик: ставим камень под ноги и редстоун-пыль
-          allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
-          allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
-
-          curZ += 2;
-          allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
-          allSetblocks.push(`setblock ~${curX} ~ ~${curZ} redstone_wire`);
-
-          dirX = -dirX; // меняем направление на противоположное
-          curX += dirX;
-        }
-
+        advanceStep();
         const facing = dirX > 0 ? 'west' : 'east';
         allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
         allSetblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=${repeaterDelay}]`);
       }
     } else if (actIdx > 0) {
-      // Если паузы нет, нужен провод редстоуна между соседними командными блоками,
-      // чтобы сигнал непрерывно передавался дальше
-      const prevX = curX;
-      curX += dirX;
-      if (Math.abs(curX) > MAX_ROW_LENGTH) {
-        curX = prevX;
-        allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
-        allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
-        curZ += 2;
-        dirX = -dirX;
-        curX += dirX;
-      }
+      // Если паузы нет, ставим повторитель на 1 тик для гарантированной передачи сигнала дальше
+      advanceStep();
       const facing = dirX > 0 ? 'west' : 'east';
       allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
       allSetblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=1]`);
     }
 
     // 2.2. Ставим командный блок с нужной командой
-    const prevX = curX;
-    curX += dirX;
-    if (Math.abs(curX) > MAX_ROW_LENGTH) {
-      curX = prevX;
-      allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
-      allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
-      curZ += 2;
-      dirX = -dirX;
-      curX += dirX;
-    }
-
+    advanceStep();
     const escapedCmd = act.command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     const facing = dirX > 0 ? 'west' : 'east';
     allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
@@ -3599,12 +3579,15 @@ function buildOneCommandLayers(processed, selector) {
       finalMinecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
     });
 
-    // 2. В самый конец очереди выполнения - удаление рельса, редстоуна и вагонеток
-    // Удаляем блок красного камня снизу (~ ~ ~ air), рельс сверху (~ ~1 ~ air)
-    // и вагонетки в радиусе 16 блоков
-    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    // 2. В самый конец очереди выполнения - удаление рельса, редстоуна и вагонеток:
+    // Когда рельс и редстоун приземлились:
+    // Редстоун оказался на ~ ~1 ~ (над стартовым КБ), а рельс - на ~ ~2 ~!
+    // Поэтому очищаем и ~ ~1 ~, и ~ ~2 ~, и сам стартовый КБ на ~ ~ ~
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~2 ~ air"}`);
     finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
-    finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`);
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    // И убиваем вагонетки прямо в этой точке:
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..20]"}`);
 
     // Сборка цепочки пассажиров:
     // Самый нижний (первый) пассажир рельса - finalMinecarts[0], у него пассажир [1], у него [2]...
