@@ -23,6 +23,9 @@
       <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить милый пример диалога Сенко и Широ">
         <span>✨ Пример (Сенко и Широ)</span>
       </button>
+      <button class="btn btn-secondary btn-sm" id="btn-open-help" title="Открыть справку по формату тегов и диалогов">
+        <span>❓ Справка</span>
+      </button>
       <button class="btn btn-secondary btn-sm" id="btn-export-project" title="Экспорт проекта в JSON файл">
         <span>💾 Сохранить проект</span>
       </button>
@@ -47,18 +50,29 @@
           <span class="badge" id="line-count-badge">0 строк</span>
         </div>
         <div class="panel-tools">
-          <span class="hint-text">Формат: <code>Персонаж: реплика</code> или <code>*действие*</code></span>
+          <label class="hint-checkbox" title="Включить всплывающие подсказки автодополнения при вводе [, &, /">
+            <input type="checkbox" id="chk-editor-hints" checked>
+            <span>💡 Автодополнение</span>
+          </label>
         </div>
       </div>
-      <div class="editor-container">
+      <div class="editor-container" id="editor-container-wrap">
         <div class="line-numbers" id="line-numbers">1</div>
         <textarea id="script-input" spellcheck="false" placeholder="Пишите ваш диалог здесь, например:
+
+[title] &6&lГлава 1: Пробуждение
+[subtitle] &eВстреча в лесу кицунэ
+/playsound entity.player.levelup master @a ~ ~ ~ 1 1
+[wait: 30]
 
 Широ: Эй, Сенко! Смотри, как великая богиня Широ умеет повелевать молниями!
 Сенко: Широ-сама, пожалуйста, поосторожнее! Вы же разобьёте сервиз для чая~
 *Широ с гордым видом складывает руки на груди и виляет белым пушистым хвостом*
+[actionbar] &aШиро хочет жареный тофу!
 Широ: Хмф! Ладно-ладно, если ты угостишь меня тем вкуснейшим жареным тофу, я буду паинькой!
 Сенко: Хи-хи, уже накрыто на стол. Приятного аппетита!"></textarea>
+        <!-- Всплывающее меню подсказок / автодополнения -->
+        <div class="autocomplete-popup" id="autocomplete-popup" style="display:none;"></div>
       </div>
       <div class="panel-footer-info">
         <span>💡 Поддерживаются цветовые коды (<code>&6</code>, <code>&l</code>, <code>&#ffaa00</code>) прямо в тексте</span>
@@ -309,6 +323,70 @@
 
     </section>
   </main>
+
+  <!-- Модальное окно: Справка по формату диалогов и команд FluffyLore -->
+  <div class="modal-backdrop" id="modal-help-backdrop" style="display:none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="icon">❓</span>
+          <h3>Справка по синтаксису и возможностям FluffyLore</h3>
+        </div>
+        <button class="modal-btn-close" id="btn-close-help" title="Закрыть справку">✕</button>
+      </div>
+      <div class="modal-body">
+        <section class="help-section">
+          <h4>🎭 Персонажи и замена</h4>
+          <p>Пишите реплику в формате <code>Персонаж: реплика</code>. Редактор автоматически заменит имя на настроенное (с цветами и стилем) и окрасит слова персонажа.</p>
+          <div class="help-example">
+            <code>Сенко: Добро пожаловать домой~</code>
+            <span class="arrow">→</span>
+            <span>Превратится в реплику с золотым префиксом Сенко и жёлтым текстом.</span>
+          </div>
+          <p>Действия от третьего лица оборачивайте в звёздочки: <code>*помахивает хвостиком*</code> (стиль задаётся правилом со знаком <code>*</code>).</p>
+        </section>
+
+        <section class="help-section">
+          <h4>🎬 Теги вывода (Title, Subtitle, Actionbar)</h4>
+          <p>Укажите тег в начале строки, чтобы выбрать тип отображения в игре:</p>
+          <ul class="help-list">
+            <li><code>[title] Текст</code> — большой заголовок по центру экрана (команда <code>/title &lt;target&gt; title ...</code>).</li>
+            <li><code>[subtitle] Текст</code> — подзаголовок чуть ниже (команда <code>/title &lt;target&gt; subtitle ...</code>).</li>
+            <li><code>[actionbar] Текст</code> — аккуратный текст над хотбаром (команда <code>/title &lt;target&gt; actionbar ...</code>).</li>
+            <li><code>[chat] Текст</code> — обычное сообщение в чат (эквивалентно строке без тега).</li>
+            <li><code>[wait: 20]</code> или <code>[delay: 40]</code> — маркер задержки в тиках (20 тиков = 1 секунда) для аниматора и командных блоков.</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h4>⚙️ Прямые команды Minecraft</h4>
+          <p>Любая строка, начинающаяся со слэша <code>/</code>, считается прямой игровой командой и экспортируется без изменений:</p>
+          <div class="help-code-sample">
+            <code>/playsound entity.player.levelup master @a ~ ~ ~ 1 1</code><br>
+            <code>/particle heart ~ ~1.5 ~ 0.5 0.5 0.5 0.05 10</code>
+          </div>
+        </section>
+
+        <section class="help-section">
+          <h4>🎨 Цветовые коды и HEX</h4>
+          <p>Вставляйте цвета прямо в текст реплик:</p>
+          <ul class="help-list">
+            <li>Классические коды: <code>&0</code>–<code>&f</code> (например, <code>&6Золотой</code>, <code>&bГолубой</code>).</li>
+            <li>Форматирование: <code>&lЖирный</code>, <code>&oКурсив</code>, <code>&nПодчёркнутый</code>, <code>&kМагия</code>, <code>&rСброс</code>.</li>
+            <li>Кастомный 24-битный цвет: <code>&#ffaa00</code> (например, <code>&#ff77a8Розовый закат</code>).</li>
+          </ul>
+        </section>
+
+        <section class="help-section">
+          <h4>🎯 Чуткая настройка селектора</h4>
+          <p>На вкладке «Чуткая настройка селектора» вы можете тонко ограничить получателей: по тегу квеста (<code>tag=quest_act1</code>), радиусу (<code>distance=..15</code>), лимиту игроков, режиму игры или координатам с NBT.</p>
+        </section>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-sm" id="btn-ok-help">Понятно, спасибо!</button>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

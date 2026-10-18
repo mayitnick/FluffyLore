@@ -32,9 +32,15 @@ const MC_FORMATS = {
   'r': { name: 'reset', label: '&r Сброс' }
 };
 
-const DEFAULT_SAMPLE_DIALOGUE = `Широ: Эй, Сенко! Смотри, как великая богиня Широ умеет повелевать молниями!
+const DEFAULT_SAMPLE_DIALOGUE = `[title] &6&lГлава 1: Пробуждение
+[subtitle] &eВстреча в лесу кицунэ
+/playsound entity.player.levelup master @a ~ ~ ~ 1 1
+[wait: 20]
+
+Широ: Эй, Сенко! Смотри, как великая богиня Широ умеет повелевать молниями!
 Сенко: Широ-сама, пожалуйста, поосторожнее! Вы же разобьёте сервиз для чая~
 *Широ с гордым видом складывает руки на груди и виляет белым пушистым хвостом*
+[actionbar] &aШиро хочет жареный тофу!
 Широ: Хмф! Ладно-ладно, если ты угостишь меня тем вкуснейшим жареным тофу, я буду паинькой!
 Сенко: Хи-хи, уже накрыто на стол. Приятного аппетита!`;
 
@@ -88,6 +94,7 @@ const state = {
   format: 'tellraw',
   playSoundEnabled: false,
   playSoundName: 'entity.experience_orb.pickup',
+  editorHintsEnabled: true,
   lastFocusedInput: null,
   activeUpperTab: 'tab-chars',
   activeLowerTab: 'tab-preview'
@@ -99,6 +106,9 @@ let els = {};
 function initDomRefs() {
   els = {
     scriptInput: document.getElementById('script-input'),
+    editorContainerWrap: document.getElementById('editor-container-wrap'),
+    autocompletePopup: document.getElementById('autocomplete-popup'),
+    chkEditorHints: document.getElementById('chk-editor-hints'),
     lineNumbers: document.getElementById('line-numbers'),
     lineCountBadge: document.getElementById('line-count-badge'),
     charCountBadge: document.getElementById('char-count-badge'),
@@ -123,6 +133,10 @@ function initDomRefs() {
     btnDownloadMcfunction: document.getElementById('btn-download-mcfunction'),
     copyStatusTip: document.getElementById('copy-status-tip'),
     btnSampleData: document.getElementById('btn-sample-data'),
+    btnOpenHelp: document.getElementById('btn-open-help'),
+    modalHelpBackdrop: document.getElementById('modal-help-backdrop'),
+    btnCloseHelp: document.getElementById('btn-close-help'),
+    btnOkHelp: document.getElementById('btn-ok-help'),
     btnExportProject: document.getElementById('btn-export-project'),
     fileImportProject: document.getElementById('file-import-project'),
     btnClearAll: document.getElementById('btn-clear-all'),
@@ -177,6 +191,8 @@ function init() {
   setupTabs();
   setupSelectorBuilderEvents();
   setupChatControls();
+  setupHelpModal();
+  setupAutocomplete();
   setupEventListeners();
   setupResizers();
   updateEditor();
@@ -620,20 +636,55 @@ function processScriptLines(text) {
 
   for (let idx = 0; idx < lines.length; idx++) {
     const rawLine = lines[idx];
-    if (rawLine.trim() === '') {
+    const trimmed = rawLine.trim();
+    if (trimmed === '') {
       continue;
+    }
+
+    // 1. Прямая игровая команда со слэшем (например: /playsound ...)
+    if (trimmed.startsWith('/')) {
+      results.push({
+        lineIndex: idx + 1,
+        rawLine,
+        type: 'command',
+        command: trimmed
+      });
+      continue;
+    }
+
+    // 2. Маркер паузы / задержки: [wait: 20] или [delay: 40]
+    const waitMatch = trimmed.match(/^\[(wait|delay):\s*(\d+)\s*\]$/i);
+    if (waitMatch) {
+      const ticks = parseInt(waitMatch[2], 10) || 20;
+      results.push({
+        lineIndex: idx + 1,
+        rawLine,
+        type: 'wait',
+        ticks: ticks
+      });
+      continue;
+    }
+
+    // 3. Проверка тега показа: [title], [subtitle], [actionbar], [chat]
+    let targetTag = 'chat';
+    let lineToParse = rawLine;
+
+    const tagMatch = rawLine.match(/^\s*\[(title|subtitle|actionbar|chat)\]\s*(.*)$/i);
+    if (tagMatch) {
+      targetTag = tagMatch[1].toLowerCase();
+      lineToParse = tagMatch[2];
     }
 
     let matchedRule = null;
     let characterName = '';
-    let speechText = rawLine;
+    let speechText = lineToParse;
 
     // Авторская ремарка в звездочках *действие*
-    if (rawLine.trim().startsWith('*') && rawLine.trim().endsWith('*') && rawLine.trim().length > 1) {
+    if (lineToParse.trim().startsWith('*') && lineToParse.trim().endsWith('*') && lineToParse.trim().length > 1) {
       const narratorRule = state.characters.find(c => c.trigger === '*' && c.enabled);
       if (narratorRule) {
         matchedRule = narratorRule;
-        speechText = rawLine.trim();
+        speechText = lineToParse.trim();
       }
     } else {
       for (const rule of state.characters) {
@@ -641,7 +692,7 @@ function processScriptLines(text) {
 
         const trig = rule.trigger;
         const pattern = new RegExp(`^(${escapeRegExp(trig)})([:»>—\\-]\\s*|\\s+)(.*)$`, 'i');
-        const match = rawLine.match(pattern);
+        const match = lineToParse.match(pattern);
 
         if (match) {
           matchedRule = rule;
@@ -691,12 +742,14 @@ function processScriptLines(text) {
       }
       combinedTokens = parseMinecraftTokens(speechText, defaultColor, defaultFormats);
     } else {
-      combinedTokens = parseMinecraftTokens(rawLine);
+      combinedTokens = parseMinecraftTokens(lineToParse);
     }
 
     results.push({
       lineIndex: idx + 1,
       rawLine,
+      type: 'dialogue',
+      tag: targetTag,
       tokens: combinedTokens
     });
   }
@@ -727,8 +780,24 @@ function updateEditor() {
       els.mcChatScreen.innerHTML = '<div class="mc-chat-empty">Здесь появится диалог в реальном времени...</div>';
     } else {
       els.mcChatScreen.innerHTML = processed.map(item => {
+        if (item.type === 'command') {
+          return `<div class="mc-chat-cmd-line"><span class="mc-badge mc-badge-cmd">⚙️ /cmd</span>${escapeHtml(item.command)}</div>`;
+        }
+        if (item.type === 'wait') {
+          return `<div class="mc-chat-wait-line"><span class="mc-badge mc-badge-wait">⏳ ${item.ticks} тиков (${(item.ticks / 20).toFixed(1)}с)</span>Пауза сценария</div>`;
+        }
+
         const html = tokensToHtml(item.tokens);
-        return `<div class="mc-chat-line">${html}</div>`;
+        let badgeHtml = '';
+        if (item.tag === 'title') {
+          badgeHtml = '<span class="mc-badge mc-badge-title">🎬 Тайтл</span>';
+        } else if (item.tag === 'subtitle') {
+          badgeHtml = '<span class="mc-badge mc-badge-subtitle">📄 Сабтайтл</span>';
+        } else if (item.tag === 'actionbar') {
+          badgeHtml = '<span class="mc-badge mc-badge-actionbar">⚡ Экшнбар</span>';
+        }
+
+        return `<div class="mc-chat-line">${badgeHtml}${html}</div>`;
       }).join('');
       els.mcChatScreen.scrollTop = els.mcChatScreen.scrollHeight;
     }
@@ -739,17 +808,38 @@ function updateEditor() {
   const commandLines = [];
 
   processed.forEach(item => {
-    if (state.playSoundEnabled && state.playSoundName.trim()) {
+    if (item.type === 'command') {
+      commandLines.push(item.command);
+      return;
+    }
+
+    if (item.type === 'wait') {
+      commandLines.push(`# [Задержка: ${item.ticks} тиков (${(item.ticks / 20).toFixed(1)} сек)]`);
+      return;
+    }
+
+    // Проигрывание звука перед обычными репликами чата (если включено)
+    if (state.playSoundEnabled && state.playSoundName.trim() && item.tag === 'chat') {
       commandLines.push(`playsound ${state.playSoundName.trim()} voice ${selector} ~ ~ ~ 1 1`);
     }
 
-    if (state.format === 'tellraw') {
-      const json = tokensToTellrawJson(item.tokens);
-      commandLines.push(`tellraw ${selector} ${json}`);
-    } else if (state.format === 'json') {
-      commandLines.push(tokensToTellrawJson(item.tokens));
-    } else if (state.format === 'legacy') {
-      commandLines.push(tokensToLegacyString(item.tokens));
+    const json = tokensToTellrawJson(item.tokens);
+
+    if (item.tag === 'title') {
+      commandLines.push(`title ${selector} title ${json}`);
+    } else if (item.tag === 'subtitle') {
+      commandLines.push(`title ${selector} subtitle ${json}`);
+    } else if (item.tag === 'actionbar') {
+      commandLines.push(`title ${selector} actionbar ${json}`);
+    } else {
+      // Обычный чат
+      if (state.format === 'tellraw') {
+        commandLines.push(`tellraw ${selector} ${json}`);
+      } else if (state.format === 'json') {
+        commandLines.push(json);
+      } else if (state.format === 'legacy') {
+        commandLines.push(tokensToLegacyString(item.tokens));
+      }
     }
   });
 
@@ -1152,6 +1242,190 @@ function setupResizers() {
   });
 }
 
+// --- Модальное окно справки ---
+function setupHelpModal() {
+  const closeHelp = () => {
+    if (els.modalHelpBackdrop) els.modalHelpBackdrop.style.display = 'none';
+  };
+
+  if (els.btnOpenHelp && els.modalHelpBackdrop) {
+    els.btnOpenHelp.addEventListener('click', () => {
+      els.modalHelpBackdrop.style.display = 'flex';
+    });
+  }
+
+  if (els.btnCloseHelp) els.btnCloseHelp.addEventListener('click', closeHelp);
+  if (els.btnOkHelp) els.btnOkHelp.addEventListener('click', closeHelp);
+
+  if (els.modalHelpBackdrop) {
+    els.modalHelpBackdrop.addEventListener('click', (e) => {
+      if (e.target === els.modalHelpBackdrop) closeHelp();
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && els.modalHelpBackdrop && els.modalHelpBackdrop.style.display !== 'none') {
+      closeHelp();
+    }
+  });
+}
+
+// --- Система подсказок и автодополнения ---
+function setupAutocomplete() {
+  if (!els.scriptInput || !els.autocompletePopup) return;
+
+  if (els.chkEditorHints) {
+    els.chkEditorHints.addEventListener('change', (e) => {
+      state.editorHintsEnabled = e.target.checked;
+      if (!state.editorHintsEnabled) {
+        hideAutocomplete();
+      }
+      saveToLocalStorage();
+    });
+  }
+
+  const hideAutocomplete = () => {
+    if (els.autocompletePopup) {
+      els.autocompletePopup.style.display = 'none';
+      els.autocompletePopup.innerHTML = '';
+    }
+  };
+
+  const applySuggestion = (insertText, triggerChar, cursorIndex) => {
+    const val = els.scriptInput.value;
+    const before = val.substring(0, cursorIndex - triggerChar.length);
+    const after = val.substring(cursorIndex);
+    els.scriptInput.value = before + insertText + after;
+    const newPos = before.length + insertText.length;
+    els.scriptInput.selectionStart = els.scriptInput.selectionEnd = newPos;
+    els.scriptInput.focus();
+    hideAutocomplete();
+    updateEditor();
+  };
+
+  const showSuggestions = (items, triggerChar, cursorIndex) => {
+    els.autocompletePopup.innerHTML = '';
+    items.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'autocomplete-item' + (idx === 0 ? ' selected' : '');
+      div.innerHTML = `
+        <span class="ac-badge">${escapeHtml(item.insert)}</span>
+        <span class="ac-title">${escapeHtml(item.title)}</span>
+        <span class="ac-desc">${escapeHtml(item.desc || '')}</span>
+      `;
+      div.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        applySuggestion(item.insert, triggerChar, cursorIndex);
+      });
+      els.autocompletePopup.appendChild(div);
+    });
+
+    els.autocompletePopup.style.display = 'block';
+    els.autocompletePopup.style.left = '56px';
+    els.autocompletePopup.style.top = '36px';
+  };
+
+  els.scriptInput.addEventListener('input', () => {
+    if (!state.editorHintsEnabled) return;
+
+    const cursor = els.scriptInput.selectionStart;
+    const textBefore = els.scriptInput.value.substring(0, cursor);
+    const currentLine = textBefore.split('\n').pop() || '';
+
+    // Подсказка по вводу [
+    if (currentLine.endsWith('[')) {
+      showSuggestions([
+        { insert: '[title] ', title: 'Заголовок', desc: 'Центр экрана' },
+        { insert: '[subtitle] ', title: 'Подзаголовок', desc: 'Под главным' },
+        { insert: '[actionbar] ', title: 'Экшнбар', desc: 'Над хотбаром' },
+        { insert: '[chat] ', title: 'Чат', desc: 'Стандартный tellraw' },
+        { insert: '[wait: 20]', title: 'Пауза', desc: '20 тиков (1 сек)' }
+      ], '[', cursor);
+      return;
+    }
+
+    // Подсказка по цветам &
+    if (currentLine.endsWith('&')) {
+      showSuggestions([
+        { insert: '&6', title: '&6 Золотой', desc: '#FFAA00' },
+        { insert: '&e', title: '&e Жёлтый', desc: '#FFFF55' },
+        { insert: '&b', title: '&b Голубой', desc: '#55FFFF' },
+        { insert: '&a', title: '&a Зелёный', desc: '#55FF55' },
+        { insert: '&c', title: '&c Красный', desc: '#FF5555' },
+        { insert: '&d', title: '&d Розовый', desc: '#FF55FF' },
+        { insert: '&f', title: '&f Белый', desc: '#FFFFFF' },
+        { insert: '&7', title: '&7 Серый', desc: '#AAAAAA' },
+        { insert: '&l', title: '&l Жирный', desc: 'Жирный шрифт' },
+        { insert: '&o', title: '&o Курсив', desc: 'Наклонный текст' },
+        { insert: '&n', title: '&n Подчеркнутый', desc: 'Подчёркивание' },
+        { insert: '&k', title: '&k Магия', desc: 'Анимация символов' },
+        { insert: '&r', title: '&r Сброс', desc: 'Сброс цвета и стиля' }
+      ], '&', cursor);
+      return;
+    }
+
+    // Подсказка по слэш-командам
+    if (currentLine === '/') {
+      showSuggestions([
+        { insert: '/playsound entity.player.levelup master @a ~ ~ ~ 1 1', title: '/playsound', desc: 'Звук уровня' },
+        { insert: '/playsound entity.experience_orb.pickup voice @a ~ ~ ~ 1 1', title: '/playsound', desc: 'Звук опыта' },
+        { insert: '/particle heart ~ ~1.5 ~ 0.5 0.5 0.5 0.05 10', title: '/particle', desc: 'Частицы сердечек' },
+        { insert: '/effect give @a slowness 3 1 true', title: '/effect', desc: 'Эффект игроку' },
+        { insert: '/title @a times 10 70 20', title: '/title times', desc: 'Время затухания' }
+      ], '/', cursor);
+      return;
+    }
+
+    hideAutocomplete();
+  });
+
+  els.scriptInput.addEventListener('keydown', (e) => {
+    if (els.autocompletePopup && els.autocompletePopup.style.display !== 'none') {
+      const items = Array.from(els.autocompletePopup.querySelectorAll('.autocomplete-item'));
+      let selectedIdx = items.findIndex(it => it.classList.contains('selected'));
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (selectedIdx < items.length - 1) {
+          items[selectedIdx]?.classList.remove('selected');
+          items[selectedIdx + 1]?.classList.add('selected');
+          items[selectedIdx + 1]?.scrollIntoView({ block: 'nearest' });
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (selectedIdx > 0) {
+          items[selectedIdx]?.classList.remove('selected');
+          items[selectedIdx - 1]?.classList.add('selected');
+          items[selectedIdx - 1]?.scrollIntoView({ block: 'nearest' });
+        }
+        return;
+      }
+
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        if (selectedIdx >= 0 && items[selectedIdx]) {
+          e.preventDefault();
+          items[selectedIdx].dispatchEvent(new MouseEvent('mousedown'));
+          return;
+        }
+      }
+
+      if (e.key === 'Escape') {
+        hideAutocomplete();
+        return;
+      }
+    }
+  });
+
+  window.addEventListener('click', (e) => {
+    if (els.autocompletePopup && !els.autocompletePopup.contains(e.target) && e.target !== els.scriptInput) {
+      hideAutocomplete();
+    }
+  });
+}
+
 // --- Анимация Minecraft Obfuscated (&k) ---
 function startObfuscationLoop() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+~|}{[]:;?><,./-=';
@@ -1211,6 +1485,7 @@ function saveToLocalStorage() {
       format: state.format,
       playSoundEnabled: state.playSoundEnabled,
       playSoundName: state.playSoundName,
+      editorHintsEnabled: state.editorHintsEnabled,
       activeUpperTab: state.activeUpperTab,
       activeLowerTab: state.activeLowerTab
     };
@@ -1223,6 +1498,7 @@ function applyStateToUI() {
   if (els.exportFormat) els.exportFormat.value = state.format || 'tellraw';
   if (els.hexFormatSelect) els.hexFormatSelect.value = state.hexFormat || 'no-hash';
   if (els.chkPlaysound) els.chkPlaysound.checked = !!state.playSoundEnabled;
+  if (els.chkEditorHints) els.chkEditorHints.checked = state.editorHintsEnabled !== false;
   if (els.playsoundInput) {
     els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
     els.playsoundInput.value = state.playSoundName || 'entity.experience_orb.pickup';
@@ -1291,6 +1567,7 @@ function loadFromLocalStorage() {
     if (data.format) state.format = data.format;
     if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
     if (data.playSoundName) state.playSoundName = data.playSoundName;
+    if (data.editorHintsEnabled !== undefined) state.editorHintsEnabled = data.editorHintsEnabled;
     if (data.activeUpperTab) state.activeUpperTab = data.activeUpperTab;
     if (data.activeLowerTab) state.activeLowerTab = data.activeLowerTab;
 
