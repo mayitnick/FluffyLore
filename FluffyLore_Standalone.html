@@ -3529,7 +3529,7 @@ function buildOneCommandLayers(processed, selector) {
           curX += dirX;
         }
 
-        const facing = dirX > 0 ? 'east' : 'west';
+        const facing = dirX > 0 ? 'west' : 'east';
         allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
         allSetblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=${repeaterDelay}]`);
       }
@@ -3546,7 +3546,7 @@ function buildOneCommandLayers(processed, selector) {
         dirX = -dirX;
         curX += dirX;
       }
-      const facing = dirX > 0 ? 'east' : 'west';
+      const facing = dirX > 0 ? 'west' : 'east';
       allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
       allSetblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=1]`);
     }
@@ -3564,18 +3564,16 @@ function buildOneCommandLayers(processed, selector) {
     }
 
     const escapedCmd = act.command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const facing = dirX > 0 ? 'east' : 'west';
+    const facing = dirX > 0 ? 'west' : 'east';
     allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
     allSetblocks.push(`setblock ~${curX} ~ ~${curZ} command_block[facing=${facing}]{Command:"${escapedCmd}"}`);
   });
 
-  // 3. Разбиваем установку на безопасные слои (по 16-20 блоков на слой)
-  // Архитектура активации вагонеток в современных версиях Minecraft:
-  // Чтобы вагонетки гарантированно выполнили свои команды и исчезли (а не застряли башней):
-  // 1. Активаторный рельс должен быть активирован блоком редстоуна сбоку или снизу.
-  // 2. Вагонетки спавнятся на рельсе с Time:1 и Passengers.
-  // 3. Последняя вагонетка удаляет активаторный рельс и спавнер-блоки!
-  const CHUNK_SIZE = 18;
+  // 3. Разбиваем установку на безопасные слои (по 10-12 блоков на слой)
+  // В новых версиях Minecraft (1.20.5+ / 1.21+ / 26.2) коллизия сущностей выталкивает
+  // высокие стеки вагонеток вверх. Пачка из 10 вагонеток спавнится и срабатывает в 0-й тик мгновенно,
+  // не успевая расслоиться физикой!
+  const CHUNK_SIZE = 10;
   const layers = [];
   const totalChunks = Math.ceil(allSetblocks.length / CHUNK_SIZE);
 
