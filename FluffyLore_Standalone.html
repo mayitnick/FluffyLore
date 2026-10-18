@@ -1026,11 +1026,67 @@ body {
   overflow: hidden;
   position: relative;
   background: var(--bg-input);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Панель слоёв One Command */
+.onecmd-layers-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #151821;
+  border-bottom: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.onecmd-layer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #1e222e;
+  border: 1px solid #363b4a;
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.onecmd-layer-btn:hover {
+  background: var(--bg-hover);
+  color: #fff;
+}
+
+.onecmd-layer-btn.active {
+  background: var(--primary);
+  color: #000;
+  border-color: var(--primary);
+}
+
+.onecmd-copy-layer-btn {
+  background: #252a38;
+  border: 1px solid #454d63;
+  color: #e5c07b;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.15s ease;
+}
+.onecmd-copy-layer-btn:hover {
+  background: #2e3547;
+  color: #fff;
 }
 
 .export-code {
+  flex: 1;
   width: 100%;
-  height: 100%;
+  height: auto;
   padding: 12px 14px;
   margin: 0;
   font-family: var(--font-mono);
@@ -2105,6 +2161,8 @@ body {
           </div>
 
           <div class="output-container">
+            <!-- Панель переключения слоев One Command (если больше 1 слоя) -->
+            <div class="onecmd-layers-bar" id="onecmd-layers-bar" style="display:none;"></div>
             <pre class="export-code" id="export-code-output"></pre>
           </div>
         </div>
@@ -2418,6 +2476,7 @@ const state = {
   activeUpperTab: 'tab-chars',
   activeLowerTab: 'tab-preview',
   globalMode: 'editor', // 'editor' | 'animator'
+  activeOneCmdLayer: 0,
   animator: {
     isPlaying: false,
     currentTick: 0,
@@ -2450,6 +2509,7 @@ function initDomRefs() {
     mcViewport: document.getElementById('mc-viewport'),
     mcChatScreen: document.getElementById('mc-chat-screen'),
     exportCodeOutput: document.getElementById('export-code-output'),
+    onecmdLayersBar: document.getElementById('onecmd-layers-bar'),
     paletteColors: document.getElementById('palette-colors'),
     paletteFormats: document.getElementById('palette-formats'),
     hexColorPicker: document.getElementById('hex-color-picker'),
@@ -3197,9 +3257,11 @@ function updateReadingComfortHighlight(lines, processed) {
     }
 
     // Расчёт идеального времени:
-    // Базовое время на реакцию/фокус глаза: ~12 тиков (0.6с)
-    // Средняя скорость чтения диалогов в играх: ~2.5 тика на символ (~8 символов в секунду)
-    const idealTicks = Math.round(12 + (prevTextLength * 2.3));
+    // Базовое время на реакцию/фокус глаза: ~8 тиков (0.4с)
+    // Динамическая скорость: чем длиннее реплика, тем быстрее человек скользит взглядом:
+    // для коротких реплик ~1.4 тика/символ, для длинных монологов ~1.0-1.1 тика/символ
+    const perCharTicks = prevTextLength > 80 ? 1.05 : (prevTextLength > 40 ? 1.25 : 1.45);
+    const idealTicks = Math.round(8 + (prevTextLength * perCharTicks));
     const actualTicks = item.ticks;
 
     // Считаем коэффициент отклонения от идеала: ratio = actual / ideal
@@ -3355,8 +3417,9 @@ function updateEditor() {
 
   if (els.exportCodeOutput) {
     if (state.format === 'onecommand') {
-      els.exportCodeOutput.textContent = generateOneCommandBox(processed, selector);
+      renderOneCommandOutput(processed, selector);
     } else {
+      if (els.onecmdLayersBar) els.onecmdLayersBar.style.display = 'none';
       els.exportCodeOutput.textContent = commandLines.join('\n');
     }
   }
@@ -3367,10 +3430,10 @@ function updateEditor() {
   saveToLocalStorage();
 }
 
-// --- Генератор One Command Box (через компактный конвейер вагонеток) ---
-function generateOneCommandBox(processed, selector) {
+// --- Многослойный генератор One Command Box (с безопасной глубиной NBT до 30 блоков) ---
+function buildOneCommandLayers(processed, selector) {
   if (!processed || processed.length === 0) {
-    return '# Сценарий пуст. Добавьте реплики в редакторе!';
+    return [{ title: 'Пусто', text: '# Сценарий пуст. Добавьте реплики в редакторе!' }];
   }
 
   // 1. Формируем список игровых действий и пауз между ними
@@ -3415,30 +3478,26 @@ function generateOneCommandBox(processed, selector) {
         command: cmd,
         delayBefore: pendingDelay
       });
-      // В Minecraft повторители ставятся ТОЛЬКО при явных тегах [wait: N]!
       pendingDelay = 0;
     }
   });
 
   if (actions.length === 0) {
-    return '# Нет команд для размещения в схеме.';
+    return [{ title: 'Пусто', text: '# Нет команд для размещения в схеме.' }];
   }
 
   // 2. Раскладка цепочки по горизонтали в плоскости (X / Z)
-  // Базовая платформа из шерсти/камня под ногами: y = 0 (относительно КБ)
-  // На ней: КБ и повторители
-  const setblocks = [];
-  let curX = 1; // строим в направлении +X
-  let curZ = 0;
-  let dirX = 1; // направление змейки
   const MAX_ROW_LENGTH = 12;
+  const allSetblocks = [];
+  let curX = 1;
+  let curZ = 0;
+  let dirX = 1;
 
-  // Платформа под стартовый триггер
-  setblocks.push(`setblock ~1 ~-1 ~0 smooth_stone`);
-  setblocks.push(`setblock ~1 ~ ~0 stone_button[face=floor]`);
+  // Стартовая площадка: платформа и кнопка
+  allSetblocks.push(`setblock ~1 ~-1 ~0 smooth_stone`);
+  allSetblocks.push(`setblock ~1 ~ ~0 stone_button[face=floor]`);
 
   actions.forEach((act, actIdx) => {
-    // Раскладываем повторители для задержки act.delayBefore
     if (actIdx > 0 && act.delayBefore > 0) {
       let ticksLeft = act.delayBefore;
       while (ticksLeft > 0) {
@@ -3448,17 +3507,16 @@ function generateOneCommandBox(processed, selector) {
         curX += dirX;
         if (Math.abs(curX) > MAX_ROW_LENGTH) {
           curX -= dirX;
-          curZ += 2; // поворот змейки на соседний ряд
+          curZ += 2;
           dirX = -dirX;
         }
 
         const facing = dirX > 0 ? 'east' : 'west';
-        setblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
-        setblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=${repeaterDelay}]`);
+        allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+        allSetblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=${repeaterDelay}]`);
       }
     }
 
-    // Ставим командный блок с нужной командой
     curX += dirX;
     if (Math.abs(curX) > MAX_ROW_LENGTH) {
       curX -= dirX;
@@ -3466,50 +3524,111 @@ function generateOneCommandBox(processed, selector) {
       dirX = -dirX;
     }
 
-    // Экранирование кавычек и слэшей для NBT
     const escapedCmd = act.command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    setblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
-    setblocks.push(`setblock ~${curX} ~ ~${curZ} command_block{Command:"${escapedCmd}"}`);
+    allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+    allSetblocks.push(`setblock ~${curX} ~ ~${curZ} command_block{Command:"${escapedCmd}"}`);
   });
 
-  // 3. Формируем команду сбора через summon falling_block и пассажиров-вагонеток
-  // Все вагонетки спавнятся в ОДНОЙ точке на 1 тик на активаторном рельсе
-  const minecarts = [];
+  // 3. Разбиваем установку на безопасные слои (по 24 блока на слой)
+  // Это предотвращает StackOverflow в парсере NBT Minecraft (Packrat)!
+  const CHUNK_SIZE = 24;
+  const layers = [];
+  const totalChunks = Math.ceil(allSetblocks.length / CHUNK_SIZE);
 
-  setblocks.forEach(sb => {
-    const esc = sb.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    minecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
-  });
+  for (let c = 0; c < totalChunks; c++) {
+    const chunkBlocks = allSetblocks.slice(c * CHUNK_SIZE, (c + 1) * CHUNK_SIZE);
+    const minecarts = [];
 
-  // Завершающие вагонетки: удаление активаторного рельса, красного камня и самих вагонеток
-  minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~-1 ~ air"}`);
-  minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
-  minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..3]"}`);
+    chunkBlocks.forEach(sb => {
+      const esc = sb.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      minecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
+    });
 
-  // Собираем вложенную структуру пассажиров
-  let passengerChain = minecarts[minecarts.length - 1];
-  for (let i = minecarts.length - 2; i >= 0; i--) {
-    const cur = minecarts[i];
-    // Вставляем следующую вагонетку в поле Passengers текущей
-    passengerChain = cur.slice(0, -1) + `,Passengers:[${passengerChain}]}`;
-  }
+    // Завершающая зачистка
+    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~-1 ~ air"}`);
+    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..3]"}`);
 
-  const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,Passengers:[${passengerChain}]}]}`;
+    // Сборка цепочки пассажиров
+    let passengerChain = minecarts[minecarts.length - 1];
+    for (let i = minecarts.length - 2; i >= 0; i--) {
+      passengerChain = minecarts[i].slice(0, -1) + `,Passengers:[${passengerChain}]}`;
+    }
 
-  const dimensionsNote = `# ========================================================
-# 📦 FluffyLore One Command Generator (1.16 - 1.21+)
-# Схема: горизонтальная змейка из повторителей и командных блоков
-# Необходимая площадка: примерно ${Math.min(curX + 2, MAX_ROW_LENGTH + 2)}×${curZ + 2} блоков в плоскости X/Z
-# Инструкция:
-# 1. Поставьте обычный командный блок в мир.
+    const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,Passengers:[${passengerChain}]}]}`;
+
+    const layerNum = c + 1;
+    const header = `# ========================================================
+# 📦 FluffyLore Command Box (1.16 - 1.21+)
+# Слой ${layerNum} из ${totalChunks} (Безопасная длина: ${chunkBlocks.length} блоков схемы)
+# Площадка для всей схемы: примерно ${Math.min(curX + 2, MAX_ROW_LENGTH + 2)}×${curZ + 2} блоков в плоскости X/Z
+#
+# ИНСТРУКЦИЯ ПО УСТАНОВКЕ:
+${totalChunks > 1 ? `# 1. Поставьте командный блок в мир на одной и той же точке (~ ~ ~).
+# 2. Вставьте команду Слоя ${layerNum} и активируйте её (схема появится, а стартовый КБ очистится).
+# 3. ${layerNum < totalChunks ? `Поставьте на то же место следующий КБ и активируйте Слой ${layerNum + 1}.` : 'Все слои установлены! Нажмите каменную кнопку (~1 ~0 ~0) для запуска катсцены!'}` : `# 1. Поставьте командный блок в мир.
 # 2. Вставьте команду ниже и активируйте её (кнопкой или рычагом).
-# 3. Конструктор мгновенно расставит готовую схему и самоуничтожится!
-# 4. Нажмите появившуюся каменную кнопку на блоке (~1 ~0 ~0) для запуска катсцены.
+# 3. Нажмите появившуюся каменную кнопку (~1 ~0 ~0) для запуска катсцены!`}
 # ========================================================
 
 ${oneCommand}`;
 
-  return dimensionsNote;
+    layers.push({
+      title: totalChunks > 1 ? `Слой ${layerNum} / ${totalChunks}` : `Одна команда`,
+      text: header,
+      rawCommand: oneCommand
+    });
+  }
+
+  return layers;
+}
+
+// Отображение One Command с кнопками переключения слоёв
+function renderOneCommandOutput(processed, selector) {
+  const layers = buildOneCommandLayers(processed, selector);
+
+  if (!els.onecmdLayersBar || !els.exportCodeOutput) return;
+
+  if (layers.length <= 1) {
+    els.onecmdLayersBar.style.display = 'none';
+    els.exportCodeOutput.textContent = layers[0].text;
+    return;
+  }
+
+  // Если слоёв несколько — показываем панель кнопок переключения и копирования
+  els.onecmdLayersBar.style.display = 'flex';
+  els.onecmdLayersBar.innerHTML = '';
+
+  const activeIdx = Math.min(state.activeOneCmdLayer || 0, layers.length - 1);
+
+  layers.forEach((layer, idx) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `onecmd-layer-btn${idx === activeIdx ? ' active' : ''}`;
+    btn.innerHTML = `<span>📦 ${layer.title}</span>`;
+    btn.addEventListener('click', () => {
+      state.activeOneCmdLayer = idx;
+      renderOneCommandOutput(processed, selector);
+    });
+    els.onecmdLayersBar.appendChild(btn);
+  });
+
+  // Кнопка быстрого копирования текущего слоя
+  const copyLayerBtn = document.createElement('button');
+  copyLayerBtn.type = 'button';
+  copyLayerBtn.className = 'onecmd-copy-layer-btn';
+  copyLayerBtn.innerHTML = `<span>📋 Копировать ${layers[activeIdx].title}</span>`;
+  copyLayerBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(layers[activeIdx].rawCommand);
+      showCopyToast(`✅ ${layers[activeIdx].title} скопирован в буфер!`);
+    } catch (e) {
+      showCopyToast(`Скопировано!`);
+    }
+  });
+  els.onecmdLayersBar.appendChild(copyLayerBtn);
+
+  els.exportCodeOutput.textContent = layers[activeIdx].text;
 }
 
 // --- Рендер карточек персонажей ---
