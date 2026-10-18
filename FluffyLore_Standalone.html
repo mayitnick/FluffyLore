@@ -3589,8 +3589,8 @@ function buildOneCommandLayers(processed, selector) {
     });
 
     // Очистка строительной площадки вагонеток: удаляем рельс, редстоун и убиваем вагонетки
+    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
     minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
-    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~-1 ~ air"}`);
     minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..3]"}`);
 
     // Сборка цепочки пассажиров
@@ -3599,11 +3599,11 @@ function buildOneCommandLayers(processed, selector) {
       passengerChain = minecarts[i].slice(0, -1) + `,Passengers:[${passengerChain}]}`;
     }
 
-    // В Minecraft 1.20+ / 1.21+:
-    // Нижний блок - redstone_block (на точке ~ ~ ~)
-    // Над ним на точке ~ ~1 ~ - activator_rail[powered=true]
-    // На нём - стек вагонеток!
-    const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"activator_rail",Properties:{powered:"true"}},Time:1,Passengers:[${passengerChain}]}`;
+    // Классический и 100% рабочий механизм One Command в Java Edition:
+    // Спавнится падающий блок красного камня на ~ ~1 ~, пассажиром у него активирующий рельс,
+    // а пассажирами у рельса - вагонетки.
+    // При падении рельс мгновенно оказывается на блоке редстоуна, запитывается и активирует вагонетки в 0-й тик!
+    const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,Passengers:[${passengerChain}]}]}`;
 
     const layerNum = c + 1;
     const header = `# ========================================================
