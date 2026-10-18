@@ -2349,19 +2349,7 @@ function loadFromLocalStorage() {
     if (data.script !== undefined && els.scriptInput) els.scriptInput.value = data.script;
 
     if (Array.isArray(data.characters) && data.characters.length > 0) {
-      state.characters = data.characters.map(char => {
-        // Миграция старого персонажа Вай на Широ
-        if (char.trigger === 'Вай') {
-          return {
-            ...char,
-            id: 'char_shiro',
-            trigger: 'Широ',
-            displayName: '&f&lШиро',
-            msgColor: '&b'
-          };
-        }
-        return char;
-      });
+      state.characters = data.characters;
     }
 
     if (data.selector) state.selector = data.selector;
