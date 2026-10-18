@@ -2,6 +2,8 @@
  * FluffyLore — Инженерное ядро редактора диалогов и компилятора Tellraw
  */
 
+const APP_BUILD_COMMIT = '97ae0c1';
+
 // Константы цветов Minecraft
 const MC_COLORS = {
   '0': { name: 'black', hex: '#000000', label: '0 Черный' },
@@ -124,6 +126,7 @@ let els = {};
 
 function initDomRefs() {
   els = {
+    appCommitHash: document.getElementById('app-commit-hash'),
     scriptInput: document.getElementById('script-input'),
     editorContainerWrap: document.getElementById('editor-container-wrap'),
     autocompletePopup: document.getElementById('autocomplete-popup'),
@@ -241,6 +244,9 @@ function initDomRefs() {
 // --- Инициализация интерфейса ---
 function init() {
   initDomRefs();
+  if (els.appCommitHash && typeof APP_BUILD_COMMIT !== 'undefined') {
+    els.appCommitHash.textContent = APP_BUILD_COMMIT;
+  }
   buildColorPalette();
   loadFromLocalStorage();
   applyChatViewportControls();

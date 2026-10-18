@@ -123,7 +123,20 @@ body {
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.logo-commit {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: #636b7f;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  letter-spacing: 0.5px;
+  user-select: text;
 }
 
 .logo-badge {

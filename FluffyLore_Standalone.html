@@ -133,7 +133,20 @@ body {
   color: #fff;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+}
+
+.logo-commit {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: #636b7f;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  letter-spacing: 0.5px;
+  user-select: text;
 }
 
 .logo-badge {
@@ -1837,7 +1850,11 @@ body {
     <div class="logo-area">
       <span class="logo-icon">🦊</span>
       <div class="logo-text">
-        <h1 class="logo-title">FluffyLore <span class="logo-badge">Minecraft 1.16–1.21+</span></h1>
+        <h1 class="logo-title">
+          <span>FluffyLore</span>
+          <span class="logo-commit" id="app-commit-hash" title="Хэш текущего коммита сборки"></span>
+          <span class="logo-badge">1.16–1.21+</span>
+        </h1>
         <p class="logo-subtitle">Пушистый редактор диалогов и генератор /tellraw команд</p>
       </div>
     </div>
@@ -2374,6 +2391,8 @@ body {
  * FluffyLore — Инженерное ядро редактора диалогов и компилятора Tellraw
  */
 
+const APP_BUILD_COMMIT = '97ae0c1';
+
 // Константы цветов Minecraft
 const MC_COLORS = {
   '0': { name: 'black', hex: '#000000', label: '0 Черный' },
@@ -2496,6 +2515,7 @@ let els = {};
 
 function initDomRefs() {
   els = {
+    appCommitHash: document.getElementById('app-commit-hash'),
     scriptInput: document.getElementById('script-input'),
     editorContainerWrap: document.getElementById('editor-container-wrap'),
     autocompletePopup: document.getElementById('autocomplete-popup'),
@@ -2613,6 +2633,9 @@ function initDomRefs() {
 // --- Инициализация интерфейса ---
 function init() {
   initDomRefs();
+  if (els.appCommitHash && typeof APP_BUILD_COMMIT !== 'undefined') {
+    els.appCommitHash.textContent = APP_BUILD_COMMIT;
+  }
   buildColorPalette();
   loadFromLocalStorage();
   applyChatViewportControls();
