@@ -3497,9 +3497,10 @@ function buildOneCommandLayers(processed, selector) {
   let curZ = 0;
   let dirX = 1;
 
-  // Стартовая площадка: платформа и каменная кнопка
+  // Стартовая площадка: платформа под первый КБ
   allSetblocks.push(`setblock ~1 ~-1 ~0 smooth_stone`);
-  allSetblocks.push(`setblock ~1 ~ ~0 stone_button[face=floor,facing=east]`);
+  // Кнопка на боку стартового блока, запускающая цепь на восток:
+  allSetblocks.push(`setblock ~1 ~ ~0 stone_button[face=wall,facing=west]`);
 
   actions.forEach((act, actIdx) => {
     // 2.1. Если перед действием есть задержка [wait: N]
@@ -3517,7 +3518,7 @@ function buildOneCommandLayers(processed, selector) {
         // Поворот змейки на соседний ряд при достижении границы
         if (Math.abs(curX) > MAX_ROW_LENGTH) {
           curX = prevX;
-          // Поворотный редстоун-уголок (соединяем ряды)
+          // Поворотный редстоун-мостик: ставим камень под ноги и редстоун-пыль
           allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
           allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
 
@@ -3599,8 +3600,10 @@ function buildOneCommandLayers(processed, selector) {
     });
 
     // 2. В самый конец очереди выполнения - удаление рельса, редстоуна и вагонеток
-    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
+    // Удаляем блок красного камня снизу (~ ~ ~ air), рельс сверху (~ ~1 ~ air)
+    // и вагонетки в радиусе 16 блоков
     finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
     finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`);
 
     // Сборка цепочки пассажиров:
@@ -3614,8 +3617,8 @@ function buildOneCommandLayers(processed, selector) {
     // Классический и 100% рабочий механизм One Command в Java Edition:
     // Спавнится падающий блок красного камня на ~ ~1 ~, пассажиром у него активирующий рельс,
     // а пассажирами у рельса - вагонетки.
-    // При падении рельс мгновенно оказывается на блоке редстоуна, запитывается и активирует вагонетки в 0-й тик!
-    const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,Passengers:[${passengerChain}]}]}`;
+    // Рельс мгновенно оказывается на блоке редстоуна, запитывается и активирует вагонетки в 0-й тик!
+    const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,DropItem:0b,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,DropItem:0b,Passengers:[${passengerChain}]}]}`;
 
     const layerNum = c + 1;
     const header = `# ========================================================
