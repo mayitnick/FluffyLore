@@ -3579,20 +3579,18 @@ function buildOneCommandLayers(processed, selector) {
       finalMinecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
     });
 
-    // 2. Команды очистки строительной площадки:
-    // В Minecraft вагонетки сидят СТРОГО на активирующем рельсе:
-    // 1-я команда очистки: убиваем ВСЕ вагонетки в радиусе 16 блоков!
-    // 2-я: удаляем рельс и блок редстоуна.
-    finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`);
+    // 2. Команды завершающей очистки строительной площадки:
+    // Рельс находится в точке ~ ~1 ~, а блок редстоуна - на ~ ~ ~
+    // ВАЖНО: сначала стираем рельс и блок редстоуна через fill/setblock,
+    // и САМОЙ последней командой убиваем сами вагонетки!
     finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
     finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`);
 
     // Сборка цепочки пассажиров:
-    // Чтобы первой сработала finalMinecarts[0] (строительный блок 1), затем [1], ..., а в конце kill:
-    // В NBT Passengers Minecraft сущность-родитель выполняет команду ПЕРВОЙ, а её Passengers - следующими!
-    // Поэтому собираем с конца массива к началу, делая finalMinecarts[0] самым внешним!
-    let passengerChain = `{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`;
-
+    // Чтобы команды выполнялись строго по очереди от 0 до конца:
+    // finalMinecarts[0] содержит в Passengers finalMinecarts[1], та [2]... а самая последняя - kill!
+    let passengerChain = finalMinecarts[finalMinecarts.length - 1];
     for (let i = finalMinecarts.length - 2; i >= 0; i--) {
       const cur = finalMinecarts[i];
       passengerChain = cur.slice(0, -1) + `,Passengers:[${passengerChain}]}`;
