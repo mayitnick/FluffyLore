@@ -5,11 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FluffyLore — Пушистый редактор диалогов и Tellraw для Minecraft</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
-  <!-- Подключение пиксельного шрифта Minecraft с поддержкой кириллицы и латиницы -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-  <link href="https://fonts.cdnfonts.com/css/minecraft-4" rel="stylesheet">
+  <!-- Подключение пиксельного шрифта Minecraft с полной поддержкой кириллицы (Monocraft) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -65,7 +62,7 @@
       </div>
       <div class="panel-footer-info">
         <span>💡 Поддерживаются цветовые коды (<code>&6</code>, <code>&l</code>, <code>&#ffaa00</code>) прямо в тексте</span>
-        <span class="font-license-link"><a href="https://fontlibrary.org/en/font/minecraftia" target="_blank" rel="noopener">Лицензия шрифта (OFL)</a></span>
+        <span class="font-license-link"><a href="https://github.com/IdreesInc/Monocraft" target="_blank" rel="noopener">Лицензия шрифта Monocraft (OFL)</a></span>
       </div>
     </section>
 
@@ -88,8 +85,11 @@
             </button>
           </div>
           <div class="tabs-actions">
+            <button class="btn btn-secondary btn-xs" id="btn-reset-chars" title="Восстановить стандартных персонажей (Сенко, Широ, Рассказчик)">
+              <span>🔄 Стандартные</span>
+            </button>
             <button class="btn btn-primary btn-xs" id="btn-add-character">
-              <span>➕ Добавить персонажа</span>
+              <span>➕ Добавить</span>
             </button>
           </div>
         </div>

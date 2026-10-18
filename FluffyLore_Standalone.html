@@ -5,13 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FluffyLore — Пушистый редактор диалогов и Tellraw для Minecraft</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦊</text></svg>">
-  <!-- Подключение пиксельного шрифта Minecraft с поддержкой кириллицы и латиницы -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-  <link href="https://fonts.cdnfonts.com/css/minecraft-4" rel="stylesheet">
+  <!-- Подключение пиксельного шрифта Minecraft с полной поддержкой кириллицы (Monocraft) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <style>
 /* === FluffyLore — Modern Minecraft Dialogue & Tellraw Editor Theme === */
+
+/* Аутентичный пиксельный шрифт Minecraft с полной поддержкой кириллицы (Monocraft) */
+@font-face {
+  font-family: 'Minecraft';
+  src: local('Minecraft'),
+       local('Monocraft'),
+       url('https://cdn.jsdelivr.net/gh/IdreesInc/Monocraft@main/dist/Monocraft-otf/Monocraft.otf') format('opentype'),
+       url('https://raw.githubusercontent.com/IdreesInc/Monocraft/main/dist/Monocraft-otf/Monocraft.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  src: local('Minecraft Bold'),
+       local('Monocraft Bold'),
+       url('https://cdn.jsdelivr.net/gh/IdreesInc/Monocraft@main/dist/Monocraft-otf/weights/Monocraft-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  src: local('Minecraft Italic'),
+       local('Monocraft Italic'),
+       url('https://cdn.jsdelivr.net/gh/IdreesInc/Monocraft@main/dist/Monocraft-otf/weights/Monocraft-Italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Minecraft';
+  src: local('Minecraft Bold Italic'),
+       local('Monocraft Bold Italic'),
+       url('https://cdn.jsdelivr.net/gh/IdreesInc/Monocraft@main/dist/Monocraft-otf/weights/Monocraft-Bold-Italic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
   --bg-main: #0f1013;
   --bg-card: #17191e;
@@ -37,7 +77,7 @@
   
   --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
-  --font-mc: 'Minecraft', 'VT323', 'Courier New', monospace;
+  --font-mc: 'Minecraft', 'Monocraft', monospace;
 }
 
 * {
@@ -608,17 +648,18 @@ body {
 
 .char-preview-pill {
   font-family: var(--font-mc);
-  font-size: 14px;
-  padding: 3px 6px;
+  font-size: 15px;
+  line-height: 22px;
+  padding: 3px 8px;
   background: #000;
   border-radius: 4px;
   border: 1px solid #222;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 1px 1px 0px rgba(0,0,0,0.8);
-  image-rendering: pixelated;
-  -webkit-font-smoothing: none;
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.85);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .btn-icon-del {
@@ -788,20 +829,20 @@ body {
   overflow-y: auto;
   border-radius: 2px;
   padding: 10px 14px;
-  /* Игровой шрифт Minecraft */
+  /* Игровой пиксельный шрифт Minecraft с поддержкой кириллицы */
   font-family: var(--font-mc);
-  font-size: 17px;
-  line-height: 24px;
+  font-size: 19px;
+  line-height: 27px;
   color: #ffffff;
   letter-spacing: 0.5px;
-  image-rendering: pixelated;
-  -webkit-font-smoothing: none;
+  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   transition: background-color 0.15s ease;
 }
 
 .mc-chat-line {
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   white-space: pre-wrap;
   word-break: break-word;
   /* Истинная пиксельная тень символов Minecraft (смещение на 2px вниз-вправо с затемнением цвета) */
@@ -949,7 +990,7 @@ body {
       </div>
       <div class="panel-footer-info">
         <span>💡 Поддерживаются цветовые коды (<code>&6</code>, <code>&l</code>, <code>&#ffaa00</code>) прямо в тексте</span>
-        <span class="font-license-link"><a href="https://fontlibrary.org/en/font/minecraftia" target="_blank" rel="noopener">Лицензия шрифта (OFL)</a></span>
+        <span class="font-license-link"><a href="https://github.com/IdreesInc/Monocraft" target="_blank" rel="noopener">Лицензия шрифта Monocraft (OFL)</a></span>
       </div>
     </section>
 
@@ -972,8 +1013,11 @@ body {
             </button>
           </div>
           <div class="tabs-actions">
+            <button class="btn btn-secondary btn-xs" id="btn-reset-chars" title="Восстановить стандартных персонажей (Сенко, Широ, Рассказчик)">
+              <span>🔄 Стандартные</span>
+            </button>
             <button class="btn btn-primary btn-xs" id="btn-add-character">
-              <span>➕ Добавить персонажа</span>
+              <span>➕ Добавить</span>
             </button>
           </div>
         </div>
@@ -1309,6 +1353,7 @@ function initDomRefs() {
     hexColorPicker: document.getElementById('hex-color-picker'),
     btnInsertHex: document.getElementById('btn-insert-hex'),
     btnAddCharacter: document.getElementById('btn-add-character'),
+    btnResetChars: document.getElementById('btn-reset-chars'),
     exportSelector: document.getElementById('export-selector'),
     exportFormat: document.getElementById('export-format'),
     hexFormatSelect: document.getElementById('hex-format-select'),
@@ -2054,6 +2099,45 @@ function setupEventListeners() {
     });
   }
 
+  if (els.btnResetChars) {
+    els.btnResetChars.addEventListener('click', () => {
+      if (confirm('Сбросить правила персонажей к стандартным (Сенко, Широ, Рассказчик)?')) {
+        state.characters = [
+          {
+            id: 'char_senko',
+            trigger: 'Сенко',
+            displayName: '&6&lСенко',
+            separator: ': ',
+            msgColor: '&e',
+            prefix: '',
+            enabled: true
+          },
+          {
+            id: 'char_shiro',
+            trigger: 'Широ',
+            displayName: '&f&lШиро',
+            separator: ': ',
+            msgColor: '&b',
+            prefix: '',
+            enabled: true
+          },
+          {
+            id: 'char_narrator',
+            trigger: '*',
+            displayName: '',
+            separator: '',
+            msgColor: '&7&o',
+            prefix: '',
+            enabled: true
+          }
+        ];
+        renderCharacterRules();
+        updateEditor();
+        showCopyToast('🔄 Персонажи сброшены к стандарту!');
+      }
+    });
+  }
+
   if (els.btnInsertHex) {
     els.btnInsertHex.addEventListener('click', () => {
       const hex = els.hexColorPicker.value;
@@ -2134,7 +2218,45 @@ function setupEventListeners() {
     els.btnSampleData.addEventListener('click', () => {
       if (els.scriptInput) {
         els.scriptInput.value = DEFAULT_SAMPLE_DIALOGUE;
+
+        // Убеждаемся, что Сенко и Широ есть в правилах персонажей
+        const hasSenko = state.characters.some(c => c.trigger.toLowerCase() === 'сенко');
+        const hasShiro = state.characters.some(c => c.trigger.toLowerCase() === 'широ');
+        if (!hasSenko || !hasShiro) {
+          state.characters = [
+            {
+              id: 'char_senko',
+              trigger: 'Сенко',
+              displayName: '&6&lСенко',
+              separator: ': ',
+              msgColor: '&e',
+              prefix: '',
+              enabled: true
+            },
+            {
+              id: 'char_shiro',
+              trigger: 'Широ',
+              displayName: '&f&lШиро',
+              separator: ': ',
+              msgColor: '&b',
+              prefix: '',
+              enabled: true
+            },
+            {
+              id: 'char_narrator',
+              trigger: '*',
+              displayName: '',
+              separator: '',
+              msgColor: '&7&o',
+              prefix: '',
+              enabled: true
+            }
+          ];
+          renderCharacterRules();
+        }
+
         updateEditor();
+        showCopyToast('✨ Пример диалога Сенко и Широ загружен!');
       }
     });
   }

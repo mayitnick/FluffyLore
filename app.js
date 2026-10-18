@@ -112,6 +112,7 @@ function initDomRefs() {
     hexColorPicker: document.getElementById('hex-color-picker'),
     btnInsertHex: document.getElementById('btn-insert-hex'),
     btnAddCharacter: document.getElementById('btn-add-character'),
+    btnResetChars: document.getElementById('btn-reset-chars'),
     exportSelector: document.getElementById('export-selector'),
     exportFormat: document.getElementById('export-format'),
     hexFormatSelect: document.getElementById('hex-format-select'),
@@ -857,6 +858,45 @@ function setupEventListeners() {
     });
   }
 
+  if (els.btnResetChars) {
+    els.btnResetChars.addEventListener('click', () => {
+      if (confirm('Сбросить правила персонажей к стандартным (Сенко, Широ, Рассказчик)?')) {
+        state.characters = [
+          {
+            id: 'char_senko',
+            trigger: 'Сенко',
+            displayName: '&6&lСенко',
+            separator: ': ',
+            msgColor: '&e',
+            prefix: '',
+            enabled: true
+          },
+          {
+            id: 'char_shiro',
+            trigger: 'Широ',
+            displayName: '&f&lШиро',
+            separator: ': ',
+            msgColor: '&b',
+            prefix: '',
+            enabled: true
+          },
+          {
+            id: 'char_narrator',
+            trigger: '*',
+            displayName: '',
+            separator: '',
+            msgColor: '&7&o',
+            prefix: '',
+            enabled: true
+          }
+        ];
+        renderCharacterRules();
+        updateEditor();
+        showCopyToast('🔄 Персонажи сброшены к стандарту!');
+      }
+    });
+  }
+
   if (els.btnInsertHex) {
     els.btnInsertHex.addEventListener('click', () => {
       const hex = els.hexColorPicker.value;
@@ -937,7 +977,45 @@ function setupEventListeners() {
     els.btnSampleData.addEventListener('click', () => {
       if (els.scriptInput) {
         els.scriptInput.value = DEFAULT_SAMPLE_DIALOGUE;
+
+        // Убеждаемся, что Сенко и Широ есть в правилах персонажей
+        const hasSenko = state.characters.some(c => c.trigger.toLowerCase() === 'сенко');
+        const hasShiro = state.characters.some(c => c.trigger.toLowerCase() === 'широ');
+        if (!hasSenko || !hasShiro) {
+          state.characters = [
+            {
+              id: 'char_senko',
+              trigger: 'Сенко',
+              displayName: '&6&lСенко',
+              separator: ': ',
+              msgColor: '&e',
+              prefix: '',
+              enabled: true
+            },
+            {
+              id: 'char_shiro',
+              trigger: 'Широ',
+              displayName: '&f&lШиро',
+              separator: ': ',
+              msgColor: '&b',
+              prefix: '',
+              enabled: true
+            },
+            {
+              id: 'char_narrator',
+              trigger: '*',
+              displayName: '',
+              separator: '',
+              msgColor: '&7&o',
+              prefix: '',
+              enabled: true
+            }
+          ];
+          renderCharacterRules();
+        }
+
         updateEditor();
+        showCopyToast('✨ Пример диалога Сенко и Широ загружен!');
       }
     });
   }
