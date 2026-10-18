@@ -1207,28 +1207,29 @@ function buildOneCommandLayers(processed, selector) {
       finalMinecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
     });
 
-    // 2. В самый конец очереди выполнения - удаление рельса, редстоуна и вагонеток:
-    // Когда рельс и редстоун приземлились:
-    // Редстоун оказался на ~ ~1 ~ (над стартовым КБ), а рельс - на ~ ~2 ~!
-    // Поэтому очищаем и ~ ~1 ~, и ~ ~2 ~, и сам стартовый КБ на ~ ~ ~
-    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~2 ~ air"}`);
+    // 2. Команды очистки строительной площадки:
+    // В Minecraft вагонетки сидят СТРОГО на активирующем рельсе:
+    // 1-я команда очистки: убиваем ВСЕ вагонетки в радиусе 16 блоков!
+    // 2-я: удаляем рельс и блок редстоуна.
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`);
     finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
     finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
-    // И убиваем вагонетки прямо в этой точке:
-    finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..20]"}`);
 
     // Сборка цепочки пассажиров:
-    // Самый нижний (первый) пассажир рельса - finalMinecarts[0], у него пассажир [1], у него [2]...
-    // Тогда в игре вагонетки активируются СНИЗУ ВВЕРХ: сначала блоки, а на самом верху - kill!
-    let passengerChain = finalMinecarts[finalMinecarts.length - 1];
+    // Чтобы первой сработала finalMinecarts[0] (строительный блок 1), затем [1], ..., а в конце kill:
+    // В NBT Passengers Minecraft сущность-родитель выполняет команду ПЕРВОЙ, а её Passengers - следующими!
+    // Поэтому собираем с конца массива к началу, делая finalMinecarts[0] самым внешним!
+    let passengerChain = `{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`;
+
     for (let i = finalMinecarts.length - 2; i >= 0; i--) {
-      passengerChain = finalMinecarts[i].slice(0, -1) + `,Passengers:[${passengerChain}]}`;
+      const cur = finalMinecarts[i];
+      passengerChain = cur.slice(0, -1) + `,Passengers:[${passengerChain}]}`;
     }
 
-    // Классический и 100% рабочий механизм One Command в Java Edition:
-    // Спавнится падающий блок красного камня на ~ ~1 ~, пассажиром у него активирующий рельс,
-    // а пассажирами у рельса - вагонетки.
-    // Рельс мгновенно оказывается на блоке редстоуна, запитывается и активирует вагонетки в 0-й тик!
+    // ВНИМАНИЕ: Спавним рельс БЕЗ падающего блока редстоуна под ним!
+    // Мы спавним ОДНУ сущность command_block_minecart прямо на уровне ~ ~1 ~,
+    // которая сразу же ставит под себя активирующий рельс и блок редстоуна,
+    // либо классический падающий блок, где рельс спавнится прямо в блоке редстоуна:
     const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,DropItem:0b,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,DropItem:0b,Passengers:[${passengerChain}]}]}`;
 
     const layerNum = c + 1;
