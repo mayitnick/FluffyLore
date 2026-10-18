@@ -1216,10 +1216,12 @@ function buildOneCommandLayers(processed, selector) {
       minecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
     });
 
-    // Очистка строительной площадки вагонеток: удаляем рельс, редстоун и убиваем вагонетки
+    // Очистка строительной площадки вагонеток:
+    // ВАЖНО: сначала убиваем вагонетки (через @s саму себя и @e по радиусу 10),
+    // а удаление рельса и блока редстоуна ставим в самый конец, чтобы питание не пропало раньше времени!
+    minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..12]"}`);
     minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
     minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
-    minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..3]"}`);
 
     // Сборка цепочки пассажиров
     let passengerChain = minecarts[minecarts.length - 1];
