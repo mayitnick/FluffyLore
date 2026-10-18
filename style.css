@@ -965,6 +965,35 @@ body {
   color: var(--text-muted);
 }
 
+.title-times-settings {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #2d3240;
+}
+.title-times-settings label {
+  color: var(--primary);
+  font-weight: 600;
+}
+.title-times-settings .times-slash {
+  color: var(--text-dim);
+  font-weight: bold;
+}
+.input-xs {
+  background: #111317;
+  border: 1px solid #363b4a;
+  border-radius: 3px;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 4px;
+  text-align: center;
+}
+.input-xs:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
 .checkbox-label {
   display: inline-flex;
   align-items: center;

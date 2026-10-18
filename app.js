@@ -92,6 +92,11 @@ const state = {
   chatBgMode: 'world',  // 'world' | 'dark' | 'black'
   chatOpacity: 65,      // 20..100
   format: 'tellraw',
+  titleTimes: {
+    fadeIn: 10,  // 0.5с (10 тиков)
+    stay: 70,     // 3.5с (70 тиков)
+    fadeOut: 20   // 1.0с (20 тиков)
+  },
   playSoundEnabled: false,
   playSoundName: 'entity.experience_orb.pickup',
   editorHintsEnabled: true,
@@ -143,6 +148,9 @@ function initDomRefs() {
     manualSelectorWrap: document.getElementById('manual-selector-wrap'),
     chkPlaysound: document.getElementById('chk-playsound'),
     playsoundInput: document.getElementById('playsound-input'),
+    inpTitleFadeIn: document.getElementById('inp-title-fadein'),
+    inpTitleStay: document.getElementById('inp-title-stay'),
+    inpTitleFadeOut: document.getElementById('inp-title-fadeout'),
     btnCopyAll: document.getElementById('btn-copy-all'),
     btnDownloadMcfunction: document.getElementById('btn-download-mcfunction'),
     copyStatusTip: document.getElementById('copy-status-tip'),
@@ -1009,6 +1017,11 @@ function updateEditor() {
     const json = tokensToTellrawJson(item.tokens);
 
     if (item.tag === 'title') {
+      // Если тайминги кастомные (отличаются от дефолта Minecraft 10 70 20), добавляем /title times
+      const { fadeIn, stay, fadeOut } = state.titleTimes || { fadeIn: 10, stay: 70, fadeOut: 20 };
+      if (fadeIn !== 10 || stay !== 70 || fadeOut !== 20) {
+        commandLines.push(`title ${selector} times ${fadeIn} ${stay} ${fadeOut}`);
+      }
       commandLines.push(`title ${selector} title ${json}`);
     } else if (item.tag === 'subtitle') {
       commandLines.push(`title ${selector} subtitle ${json}`);
@@ -1065,6 +1078,14 @@ function generateOneCommandBox(processed, selector) {
     } else if (item.type === 'dialogue') {
       const json = tokensToTellrawJson(item.tokens);
       if (item.tag === 'title') {
+        const { fadeIn, stay, fadeOut } = state.titleTimes || { fadeIn: 10, stay: 70, fadeOut: 20 };
+        if (fadeIn !== 10 || stay !== 70 || fadeOut !== 20) {
+          actions.push({
+            command: `title ${selector} times ${fadeIn} ${stay} ${fadeOut}`,
+            delayBefore: pendingDelay
+          });
+          pendingDelay = 0;
+        }
         cmd = `title ${selector} title ${json}`;
       } else if (item.tag === 'subtitle') {
         cmd = `title ${selector} subtitle ${json}`;
@@ -1352,6 +1373,18 @@ function setupEventListeners() {
       updateEditor();
     });
   }
+
+  // Настройка таймингов Title (/title times)
+  const updateTitleTimes = () => {
+    state.titleTimes.fadeIn = parseInt(els.inpTitleFadeIn?.value, 10) || 10;
+    state.titleTimes.stay = parseInt(els.inpTitleStay?.value, 10) || 70;
+    state.titleTimes.fadeOut = parseInt(els.inpTitleFadeOut?.value, 10) || 20;
+    updateEditor();
+  };
+
+  if (els.inpTitleFadeIn) els.inpTitleFadeIn.addEventListener('input', updateTitleTimes);
+  if (els.inpTitleStay) els.inpTitleStay.addEventListener('input', updateTitleTimes);
+  if (els.inpTitleFadeOut) els.inpTitleFadeOut.addEventListener('input', updateTitleTimes);
 
   if (els.btnCopyAll) {
     els.btnCopyAll.addEventListener('click', async () => {
@@ -2196,8 +2229,21 @@ function renderEventsAtTick(tick) {
 }
 
 // Показ Title
-function displayTitle(tokens, durationTicks = 80) {
+function displayTitle(tokens, durationTicks) {
   if (!els.animTitleBox || !els.animTitleText) return;
+
+  const times = state.titleTimes || { fadeIn: 10, stay: 70, fadeOut: 20 };
+  const fadeInMs = Math.round((times.fadeIn * 50) / state.animator.playbackSpeed);
+  const stayTicks = durationTicks !== undefined ? durationTicks : (times.stay + times.fadeOut);
+  const fadeOutMs = Math.round((times.fadeOut * 50) / state.animator.playbackSpeed);
+
+  // Настраиваем CSS transition скорости затухания под тайминги fade-out
+  const fadeOutSec = (times.fadeOut / 20 / state.animator.playbackSpeed).toFixed(2);
+  els.animTitleBox.style.transition = `opacity ${fadeOutSec}s ease`;
+  if (els.animSubtitleBox) {
+    els.animSubtitleBox.style.transition = `opacity ${fadeOutSec}s ease`;
+  }
+
   els.animTitleText.innerHTML = tokensToHtml(tokens);
   els.animTitleBox.style.display = 'block';
   els.animTitleBox.style.opacity = '1';
@@ -2219,8 +2265,8 @@ function displayTitle(tokens, durationTicks = 80) {
         els.animSubtitleBox.style.display = 'none';
       }
       state.animator.pendingSubtitleTokens = null;
-    }, 500);
-  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
+    }, Math.max(100, fadeOutMs));
+  }, Math.max(100, (stayTicks * 50) / state.animator.playbackSpeed));
 }
 
 // Регистрация / показ Subtitle (по правилам Minecraft)
@@ -2412,6 +2458,7 @@ function saveToLocalStorage() {
       playSoundEnabled: state.playSoundEnabled,
       playSoundName: state.playSoundName,
       editorHintsEnabled: state.editorHintsEnabled,
+      titleTimes: state.titleTimes,
       activeUpperTab: state.activeUpperTab,
       activeLowerTab: state.activeLowerTab
     };
@@ -2425,6 +2472,9 @@ function applyStateToUI() {
   if (els.hexFormatSelect) els.hexFormatSelect.value = state.hexFormat || 'no-hash';
   if (els.chkPlaysound) els.chkPlaysound.checked = !!state.playSoundEnabled;
   if (els.chkEditorHints) els.chkEditorHints.checked = state.editorHintsEnabled !== false;
+  if (els.inpTitleFadeIn && state.titleTimes) els.inpTitleFadeIn.value = state.titleTimes.fadeIn ?? 10;
+  if (els.inpTitleStay && state.titleTimes) els.inpTitleStay.value = state.titleTimes.stay ?? 70;
+  if (els.inpTitleFadeOut && state.titleTimes) els.inpTitleFadeOut.value = state.titleTimes.fadeOut ?? 20;
   if (els.playsoundInput) {
     els.playsoundInput.style.display = state.playSoundEnabled ? 'inline-block' : 'none';
     els.playsoundInput.value = state.playSoundName || 'entity.experience_orb.pickup';
@@ -2481,6 +2531,9 @@ function loadFromLocalStorage() {
     if (data.format) state.format = data.format;
     if (data.playSoundEnabled !== undefined) state.playSoundEnabled = data.playSoundEnabled;
     if (data.playSoundName) state.playSoundName = data.playSoundName;
+    if (data.titleTimes) {
+      state.titleTimes = { ...state.titleTimes, ...data.titleTimes };
+    }
     if (data.editorHintsEnabled !== undefined) state.editorHintsEnabled = data.editorHintsEnabled;
     if (data.activeUpperTab) state.activeUpperTab = data.activeUpperTab;
     if (data.activeLowerTab) state.activeLowerTab = data.activeLowerTab;

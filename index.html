@@ -325,6 +325,16 @@
               <input type="text" id="playsound-input" class="input-sm" value="entity.experience_orb.pickup" placeholder="minecraft:sound" style="display:none; width: 170px;">
             </div>
 
+            <!-- Настройка таймингов Title (/title times fade-in stay fade-out) -->
+            <div class="option-item title-times-settings" title="Настройка времени появления, показа и затухания заголовков в тиках (20 тиков = 1 сек)">
+              <label>⏱️ Title (тики):</label>
+              <input type="number" id="inp-title-fadein" class="input-xs" value="10" min="0" max="200" title="Fade-in: появление (по умолчанию 10 = 0.5с)" style="width: 48px;">
+              <span class="times-slash">/</span>
+              <input type="number" id="inp-title-stay" class="input-xs" value="70" min="0" max="600" title="Stay: удержание на экране (по умолчанию 70 = 3.5с)" style="width: 52px;">
+              <span class="times-slash">/</span>
+              <input type="number" id="inp-title-fadeout" class="input-xs" value="20" min="0" max="200" title="Fade-out: затухание (по умолчанию 20 = 1.0с)" style="width: 48px;">
+            </div>
+
             <span class="copy-status-tip" id="copy-status-tip"></span>
           </div>
 
