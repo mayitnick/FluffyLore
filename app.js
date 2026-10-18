@@ -1115,51 +1115,95 @@ function buildOneCommandLayers(processed, selector) {
   }
 
   // 2. Раскладка цепочки по горизонтали в плоскости (X / Z)
+  // Прямая линия редстоуна: Сигнал идет строго непрерывной цепочкой
+  // Каждый шаг: Повторитель (repeater) или Редстоун-пыль (redstone_wire) или Командный блок (command_block)
+  // В Minecraft сигнал из повторителя входит в командный блок, а чтобы сигнал шел ДАЛЬШЕ из командного блока,
+  // за командным блоком СРАЗУ должен стоять повторитель или провод!
   const MAX_ROW_LENGTH = 12;
   const allSetblocks = [];
   let curX = 1;
   let curZ = 0;
   let dirX = 1;
 
-  // Стартовая площадка: платформа и кнопка
+  // Стартовая площадка: платформа и каменная кнопка
   allSetblocks.push(`setblock ~1 ~-1 ~0 smooth_stone`);
-  allSetblocks.push(`setblock ~1 ~ ~0 stone_button[face=floor]`);
+  allSetblocks.push(`setblock ~1 ~ ~0 stone_button[face=floor,facing=east]`);
 
   actions.forEach((act, actIdx) => {
+    // 2.1. Если перед действием есть задержка [wait: N]
     if (actIdx > 0 && act.delayBefore > 0) {
       let ticksLeft = act.delayBefore;
       while (ticksLeft > 0) {
         const repeaterDelay = Math.min(Math.max(Math.round(ticksLeft / 2), 1), 4);
         ticksLeft -= repeaterDelay * 2;
 
+        // Делаем шаг в текущем направлении
+        const prevX = curX;
+        const prevZ = curZ;
         curX += dirX;
+
+        // Поворот змейки на соседний ряд при достижении границы
         if (Math.abs(curX) > MAX_ROW_LENGTH) {
-          curX -= dirX;
+          curX = prevX;
+          // Поворотный редстоун-уголок (соединяем ряды)
+          allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
+          allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
+
           curZ += 2;
-          dirX = -dirX;
+          allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+          allSetblocks.push(`setblock ~${curX} ~ ~${curZ} redstone_wire`);
+
+          dirX = -dirX; // меняем направление на противоположное
+          curX += dirX;
         }
 
         const facing = dirX > 0 ? 'east' : 'west';
         allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
         allSetblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=${repeaterDelay}]`);
       }
+    } else if (actIdx > 0) {
+      // Если паузы нет, нужен провод редстоуна между соседними командными блоками,
+      // чтобы сигнал непрерывно передавался дальше
+      const prevX = curX;
+      curX += dirX;
+      if (Math.abs(curX) > MAX_ROW_LENGTH) {
+        curX = prevX;
+        allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
+        allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
+        curZ += 2;
+        dirX = -dirX;
+        curX += dirX;
+      }
+      const facing = dirX > 0 ? 'east' : 'west';
+      allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+      allSetblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=1]`);
     }
 
+    // 2.2. Ставим командный блок с нужной командой
+    const prevX = curX;
     curX += dirX;
     if (Math.abs(curX) > MAX_ROW_LENGTH) {
-      curX -= dirX;
+      curX = prevX;
+      allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ + 1} smooth_stone`);
+      allSetblocks.push(`setblock ~${curX} ~ ~${curZ + 1} redstone_wire`);
       curZ += 2;
       dirX = -dirX;
+      curX += dirX;
     }
 
     const escapedCmd = act.command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const facing = dirX > 0 ? 'east' : 'west';
     allSetblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
-    allSetblocks.push(`setblock ~${curX} ~ ~${curZ} command_block{Command:"${escapedCmd}"}`);
+    allSetblocks.push(`setblock ~${curX} ~ ~${curZ} command_block[facing=${facing}]{Command:"${escapedCmd}"}`);
   });
 
-  // 3. Разбиваем установку на безопасные слои (по 24 блока на слой)
-  // Это предотвращает StackOverflow в парсере NBT Minecraft (Packrat)!
-  const CHUNK_SIZE = 24;
+  // 3. Разбиваем установку на безопасные слои (по 16-20 блоков на слой)
+  // Архитектура активации вагонеток в современных версиях Minecraft:
+  // Чтобы вагонетки гарантированно выполнили свои команды и исчезли (а не застряли башней):
+  // 1. Активаторный рельс должен быть активирован блоком редстоуна сбоку или снизу.
+  // 2. Вагонетки спавнятся на рельсе с Time:1 и Passengers.
+  // 3. Последняя вагонетка удаляет активаторный рельс и спавнер-блоки!
+  const CHUNK_SIZE = 18;
   const layers = [];
   const totalChunks = Math.ceil(allSetblocks.length / CHUNK_SIZE);
 
@@ -1172,9 +1216,9 @@ function buildOneCommandLayers(processed, selector) {
       minecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
     });
 
-    // Завершающая зачистка
-    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~-1 ~ air"}`);
+    // Очистка строительной площадки вагонеток: удаляем рельс, редстоун и убиваем вагонетки
     minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~-1 ~ air"}`);
     minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..3]"}`);
 
     // Сборка цепочки пассажиров
@@ -1183,7 +1227,11 @@ function buildOneCommandLayers(processed, selector) {
       passengerChain = minecarts[i].slice(0, -1) + `,Passengers:[${passengerChain}]}`;
     }
 
-    const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,Passengers:[${passengerChain}]}]}`;
+    // В Minecraft 1.20+ / 1.21+:
+    // Нижний блок - redstone_block (на точке ~ ~ ~)
+    // Над ним на точке ~ ~1 ~ - activator_rail[powered=true]
+    // На нём - стек вагонеток!
+    const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"activator_rail",Properties:{powered:"true"}},Time:1,Passengers:[${passengerChain}]}`;
 
     const layerNum = c + 1;
     const header = `# ========================================================
