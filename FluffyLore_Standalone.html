@@ -3589,16 +3589,28 @@ function buildOneCommandLayers(processed, selector) {
     });
 
     // Очистка строительной площадки вагонеток:
-    // ВАЖНО: сначала убиваем вагонетки (через @s саму себя и @e по радиусу 10),
-    // а удаление рельса и блока редстоуна ставим в самый конец, чтобы питание не пропало раньше времени!
-    minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..12]"}`);
-    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
-    minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    // Порядок в массиве: команды блоков идут первыми, затем удаление блоков и вагонеток.
+    // При сборке цепочки последняя вагонетка массива становится самым внешним родителем (внизу, на самом рельсе),
+    // поэтому первыми выполняются очистка! Чтобы блоки ставились ДО очистки, инвертируем добавление:
+    const finalMinecarts = [];
 
-    // Сборка цепочки пассажиров
-    let passengerChain = minecarts[minecarts.length - 1];
-    for (let i = minecarts.length - 2; i >= 0; i--) {
-      passengerChain = minecarts[i].slice(0, -1) + `,Passengers:[${passengerChain}]}`;
+    // 1. Сначала идут все рабочие команды блоков
+    chunkBlocks.forEach(sb => {
+      const esc = sb.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      finalMinecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
+    });
+
+    // 2. В самый конец очереди выполнения - удаление рельса, редстоуна и вагонеток
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~1 ~ air"}`);
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+    finalMinecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..16]"}`);
+
+    // Сборка цепочки пассажиров:
+    // Самый нижний (первый) пассажир рельса - finalMinecarts[0], у него пассажир [1], у него [2]...
+    // Тогда в игре вагонетки активируются СНИЗУ ВВЕРХ: сначала блоки, а на самом верху - kill!
+    let passengerChain = finalMinecarts[finalMinecarts.length - 1];
+    for (let i = finalMinecarts.length - 2; i >= 0; i--) {
+      passengerChain = finalMinecarts[i].slice(0, -1) + `,Passengers:[${passengerChain}]}`;
     }
 
     // Классический и 100% рабочий механизм One Command в Java Edition:
