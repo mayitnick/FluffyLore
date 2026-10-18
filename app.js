@@ -2,7 +2,7 @@
  * FluffyLore — Инженерное ядро редактора диалогов и компилятора Tellraw
  */
 
-const APP_BUILD_COMMIT = '97ae0c1';
+const APP_BUILD_COMMIT = '44e82a9';
 
 // Константы цветов Minecraft
 const MC_COLORS = {
