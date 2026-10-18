@@ -152,6 +152,63 @@ body {
   color: var(--text-muted);
 }
 
+/* === Переключатель режимов (Редактор / Аниматор) в шапке === */
+.view-mode-switcher {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #111317;
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin: 0 auto;
+}
+
+.mode-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.mode-tab-btn:hover {
+  color: #fff;
+  background: var(--bg-hover);
+}
+
+.mode-tab-btn.active {
+  color: #fff;
+  background: var(--bg-card);
+  border-color: rgba(255, 157, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.mode-badge-pulse {
+  font-size: 9px;
+  background: var(--primary);
+  color: #000;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 10px;
+  letter-spacing: 0.5px;
+  animation: pulseBadge 1.8s infinite;
+}
+
+@keyframes pulseBadge {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.85; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -1188,6 +1245,425 @@ body {
   justify-content: flex-end;
 }
 
+/* === Полноэкранный Кинотеатр-Аниматор Катсцены === */
+.animator-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: calc(100vh - 65px);
+  background: #0b0c0f;
+  position: relative;
+}
+
+.anim-viewport {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px 30px;
+  overflow: hidden;
+  background-color: #0b0d12;
+  background-size: cover;
+  background-position: center;
+  transition: background-image 0.3s ease, background-color 0.3s ease;
+}
+
+.anim-viewport.bg-world {
+  background-image: radial-gradient(circle at 50% 40%, rgba(18, 26, 38, 0.5) 0%, rgba(9, 11, 16, 0.95) 100%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.01) 0px, rgba(255, 255, 255, 0.01) 2px, transparent 2px, transparent 8px),
+    linear-gradient(180deg, #18283b 0%, #1c3b2b 60%, #0d1e13 100%);
+}
+
+.anim-viewport.bg-dark {
+  background: radial-gradient(circle at 50% 50%, #151821 0%, #0b0c10 100%);
+}
+
+.anim-viewport.bg-black {
+  background: #000000;
+}
+
+/* --- Bossbar (Боссбар сверху) --- */
+.anim-bossbar-wrap {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  z-index: 10;
+  min-width: 320px;
+  max-width: 600px;
+  animation: bossbarSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bossbarSlideDown {
+  from { opacity: 0; transform: translate(-50%, -15px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.anim-bossbar-title {
+  font-family: var(--font-pixel);
+  font-size: 16px;
+  color: #fff;
+  text-shadow: 2px 2px 0px #000, -1px -1px 0px #000;
+  letter-spacing: 0.5px;
+}
+
+.anim-bossbar-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #222;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6);
+}
+
+.anim-bossbar-fill {
+  height: 100%;
+  background: #a800a8;
+  transition: width 0.3s ease;
+}
+
+.anim-bossbar-bar.color-purple .anim-bossbar-fill { background: #b339b3; }
+.anim-bossbar-bar.color-red .anim-bossbar-fill { background: #c0392b; }
+.anim-bossbar-bar.color-green .anim-bossbar-fill { background: #27ae60; }
+.anim-bossbar-bar.color-yellow .anim-bossbar-fill { background: #f1c40f; }
+.anim-bossbar-bar.color-blue .anim-bossbar-fill { background: #2980b9; }
+.anim-bossbar-bar.color-white .anim-bossbar-fill { background: #ecf0f1; }
+
+/* --- Большой Title и Subtitle по центру экрана --- */
+.anim-center-titles-wrap {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: none;
+  z-index: 20;
+  width: 90%;
+  text-align: center;
+}
+
+.anim-title-box, .anim-subtitle-box {
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 8px 24px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.anim-title-text {
+  font-family: var(--font-pixel);
+  font-size: 38px;
+  line-height: 48px;
+  color: #ffffff;
+  text-shadow: 3px 3px 0px #111, -1px -1px 0px #222;
+  letter-spacing: 1px;
+}
+
+.anim-subtitle-text {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  line-height: 30px;
+  color: #aaaaaa;
+  text-shadow: 2px 2px 0px #111;
+  letter-spacing: 0.5px;
+}
+
+/* --- Игровой чат слева внизу --- */
+.anim-chat-wrap {
+  position: absolute;
+  left: 24px;
+  bottom: 84px;
+  width: 420px;
+  max-width: 42vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.anim-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 380px;
+  overflow: hidden;
+  justify-content: flex-end;
+}
+
+.anim-chat-line {
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  line-height: 22px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  text-shadow: 2px 2px 0px #151515;
+  width: fit-content;
+  max-width: 100%;
+  word-break: break-word;
+  transition: opacity 1s ease;
+}
+
+.anim-chat-line.fading {
+  opacity: 0;
+}
+
+.anim-chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.75);
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+  margin-top: 4px;
+  font-family: var(--font-pixel);
+  font-size: 14px;
+  color: #fff;
+}
+
+.anim-chat-prompt {
+  color: #aaa;
+}
+
+.anim-chat-cursor {
+  animation: blinkCursor 0.8s infinite;
+  color: #fff;
+}
+
+@keyframes blinkCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* --- Субтитры звуков Minecraft (Show Subtitles в правом нижнем углу) --- */
+.anim-sound-subtitles {
+  position: absolute;
+  right: 24px;
+  bottom: 84px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 15;
+  max-width: 320px;
+}
+
+.anim-sound-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 4px;
+  border-left: 3px solid #ffaa00;
+  font-family: var(--font-pixel);
+  font-size: 13px;
+  line-height: 18px;
+  color: #ffffff;
+  text-shadow: 1px 1px 0px #000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  animation: soundSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.8s ease;
+}
+
+@keyframes soundSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.anim-sound-chip.fading {
+  opacity: 0;
+}
+
+.anim-sound-icon {
+  font-size: 14px;
+}
+
+.anim-sound-arrow {
+  color: #ffaa00;
+  font-weight: bold;
+}
+
+/* --- Нижняя панель: Actionbar + Хотбар Minecraft --- */
+.anim-bottom-hud {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.anim-actionbar-box {
+  padding: 4px 14px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  transition: opacity 0.4s ease;
+}
+
+.anim-actionbar-text {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 24px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0px #111;
+  letter-spacing: 0.5px;
+}
+
+/* Аутентичный хотбар на 9 ячеек */
+.anim-hotbar {
+  display: flex;
+  background: rgba(30, 30, 30, 0.7);
+  border: 2px solid #4a4a4a;
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8);
+  padding: 2px;
+  gap: 2px;
+}
+
+.anim-hotbar-slot {
+  width: 38px;
+  height: 38px;
+  background: rgba(139, 139, 139, 0.2);
+  border: 2px solid #373737;
+  border-top-color: #262626;
+  border-left-color: #262626;
+  border-right-color: #555555;
+  border-bottom-color: #555555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.anim-hotbar-slot.selected {
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.anim-hotbar-slot .slot-item {
+  font-size: 20px;
+  filter: drop-shadow(1px 2px 1px rgba(0,0,0,0.6));
+}
+
+/* === Панель управления плеером катсцены === */
+.anim-player-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #13151b;
+  border-top: 1px solid var(--border-color);
+  z-index: 30;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.player-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-time-display {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  background: #1a1d26;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #2d3240;
+}
+
+.player-time-display .current-time {
+  color: #fff;
+  font-weight: 600;
+}
+
+.player-time-display .ticks-badge {
+  font-size: 10px;
+  color: var(--primary);
+  margin-left: 4px;
+  font-weight: 600;
+}
+
+.player-timeline-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 600px;
+}
+
+.player-timeline-slider {
+  width: 100%;
+  accent-color: var(--primary);
+  height: 6px;
+  cursor: pointer;
+}
+
+.timeline-step-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.player-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-opt-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.select-xs {
+  background: #1a1d26;
+  border: 1px solid #2d3240;
+  color: var(--text-main);
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.select-xs:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
 /* Скроллбары */
 ::-webkit-scrollbar {
   width: 6px;
@@ -1216,6 +1692,18 @@ body {
         <p class="logo-subtitle">Пушистый редактор диалогов и генератор /tellraw команд</p>
       </div>
     </div>
+
+    <!-- Переключатель глобальных режимов: Редактор / Аниматор -->
+    <div class="view-mode-switcher">
+      <button class="mode-tab-btn active" id="btn-mode-editor" title="Перейти в текстовый редактор сценария">
+        <span class="icon">📝</span> <span>Редактор сценария</span>
+      </button>
+      <button class="mode-tab-btn" id="btn-mode-animator" title="Перейти в полноэкранный кинотеатр-аниматор катсцены">
+        <span class="icon">🎬</span> <span>Кинотеатр-Аниматор</span>
+        <span class="mode-badge-pulse">NEW</span>
+      </button>
+    </div>
+
     <div class="header-actions">
       <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить милый пример диалога Сенко и Широ">
         <span>✨ Пример (Сенко и Широ)</span>
@@ -1474,6 +1962,7 @@ body {
               <label for="export-format">Формат:</label>
               <select id="export-format" class="select-sm">
                 <option value="tellraw">Команда /tellraw</option>
+                <option value="onecommand">📦 One Command (Для командного блока)</option>
                 <option value="json">Чистый JSON массив</option>
                 <option value="legacy">С параграфами (§-коды)</option>
               </select>
@@ -1521,6 +2010,121 @@ body {
     </section>
   </main>
 
+  <!-- Полноэкранный Кинотеатр-Аниматор Катсцены -->
+  <div class="animator-view" id="animator-view" style="display: none;">
+    <!-- Видовой экран игры Minecraft -->
+    <div class="anim-viewport" id="anim-viewport">
+      
+      <!-- Верхняя зона: Bossbar (Боссбар) -->
+      <div class="anim-bossbar-wrap" id="anim-bossbar-wrap" style="display: none;">
+        <div class="anim-bossbar-title" id="anim-bossbar-title">Боссбар</div>
+        <div class="anim-bossbar-bar color-purple" id="anim-bossbar-bar">
+          <div class="anim-bossbar-fill" id="anim-bossbar-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Центральная зона: Большой Title и Subtitle с подложкой -->
+      <div class="anim-center-titles-wrap" id="anim-center-titles-wrap">
+        <div class="anim-title-box" id="anim-title-box" style="display: none;">
+          <div class="anim-title-text" id="anim-title-text"></div>
+        </div>
+        <div class="anim-subtitle-box" id="anim-subtitle-box" style="display: none;">
+          <div class="anim-subtitle-text" id="anim-subtitle-text"></div>
+        </div>
+      </div>
+
+      <!-- Нижняя левая зона: Игровой чат -->
+      <div class="anim-chat-wrap" id="anim-chat-wrap">
+        <div class="anim-chat-messages" id="anim-chat-messages"></div>
+        <div class="anim-chat-input-bar" id="anim-chat-input-bar" style="display: none;">
+          <span class="anim-chat-prompt">&gt;</span>
+          <span class="anim-chat-cursor">_</span>
+        </div>
+      </div>
+
+      <!-- Нижняя правая зона: Аутентичные субтитры звуков Minecraft (Show Subtitles) -->
+      <div class="anim-sound-subtitles" id="anim-sound-subtitles"></div>
+
+      <!-- Нижняя центральная зона: Actionbar + Хотбар -->
+      <div class="anim-bottom-hud">
+        <!-- Всплывающий Actionbar -->
+        <div class="anim-actionbar-box" id="anim-actionbar-box" style="display: none;">
+          <div class="anim-actionbar-text" id="anim-actionbar-text"></div>
+        </div>
+
+        <!-- Аутентичный хотбар Minecraft на 9 слотов -->
+        <div class="anim-hotbar">
+          <div class="anim-hotbar-slot selected"><span class="slot-item">🗡️</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">🛡️</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">🍞</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">🍵</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">📜</span></div>
+          <div class="anim-hotbar-slot"></div>
+          <div class="anim-hotbar-slot"></div>
+          <div class="anim-hotbar-slot"></div>
+          <div class="anim-hotbar-slot"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Панель управления воспроизведением (Плеер катсцены) -->
+    <div class="anim-player-panel" id="anim-player-panel">
+      <div class="player-controls-left">
+        <button class="btn btn-primary btn-sm" id="btn-play-pause" title="Запуск/Пауза воспроизведения (Пробел)">
+          <span id="btn-play-icon">▶️</span> <span id="btn-play-text">Старт</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-player-stop" title="Остановить и сбросить в начало">
+          <span>⏹️ В начало</span>
+        </button>
+        <div class="player-time-display">
+          <span class="current-time" id="anim-current-time">00:00</span>
+          <span class="time-sep">/</span>
+          <span class="total-time" id="anim-total-time">00:00</span>
+          <span class="ticks-badge" id="anim-ticks-badge">0 тиков</span>
+        </div>
+      </div>
+
+      <!-- Ползунок таймлайна катсцены -->
+      <div class="player-timeline-wrap">
+        <input type="range" class="player-timeline-slider" id="anim-timeline-slider" min="0" max="100" value="0" step="1">
+        <div class="timeline-step-label" id="anim-step-label">Сценарий готов к воспроизведению</div>
+      </div>
+
+      <div class="player-controls-right">
+        <!-- Режим чата: открыт / закрыт -->
+        <div class="player-opt-item">
+          <label for="anim-chat-mode-select">Чат:</label>
+          <select id="anim-chat-mode-select" class="select-xs">
+            <option value="closed">Закрыт (исчезает через 5с)</option>
+            <option value="open">Открыт (с полем ввода)</option>
+          </select>
+        </div>
+
+        <!-- Скорость -->
+        <div class="player-opt-item">
+          <label for="anim-speed-select">Скорость:</label>
+          <select id="anim-speed-select" class="select-xs">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1.0x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2">2.0x</option>
+          </select>
+        </div>
+
+        <!-- Фон аниматора -->
+        <div class="player-opt-item">
+          <label for="anim-bg-select">Фон:</label>
+          <select id="anim-bg-select" class="select-xs">
+            <option value="world">Мир Minecraft 🌳</option>
+            <option value="dark">Тёмный 🌙</option>
+            <option value="black">Чёрный ⬛</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Модальное окно: Справка по формату диалогов и команд FluffyLore -->
   <div class="modal-backdrop" id="modal-help-backdrop" style="display:none;">
     <div class="modal-dialog">
@@ -1550,9 +2154,21 @@ body {
             <li><code>[title] Текст</code> — большой заголовок по центру экрана (команда <code>/title &lt;target&gt; title ...</code>).</li>
             <li><code>[subtitle] Текст</code> — подзаголовок чуть ниже (команда <code>/title &lt;target&gt; subtitle ...</code>).</li>
             <li><code>[actionbar] Текст</code> — аккуратный текст над хотбаром (команда <code>/title &lt;target&gt; actionbar ...</code>).</li>
+            <li><code>[bossbar: red] Текст</code> — полоска босса сверху экрана (цвета: red, purple, blue, green, yellow, white).</li>
             <li><code>[chat] Текст</code> — обычное сообщение в чат (эквивалентно строке без тега).</li>
             <li><code>[wait: 20]</code> или <code>[delay: 40]</code> — маркер задержки в тиках (20 тиков = 1 секунда) для аниматора и командных блоков.</li>
           </ul>
+        </section>
+
+        <section class="help-section">
+          <h4>🎬 Кинотеатр-Аниматор</h4>
+          <p>Переключитесь в режим <b>«🎬 Кинотеатр-Аниматор»</b> в верхней панели. Вы увидите полноценную симуляцию экрана Minecraft с таймлайном, хотбаром, субтитрами звуков справа внизу и исчезающим чатом!</p>
+        </section>
+
+        <section class="help-section">
+          <h4>📦 One Command (Генератор схемы из одной команды)</h4>
+          <p>На вкладке «Экспорт» выберите формат <b>📦 One Command</b>. FluffyLore сгенерирует одну команду для командного блока, которая при активации создаст компактный конвейер из вагонеток, аккуратно расставит змейку из повторителей и командных блоков прямо в мире игры, и самоуничтожится!</p>
+        </section>
         </section>
 
         <section class="help-section">
@@ -1685,7 +2301,20 @@ const state = {
   editorHintsEnabled: true,
   lastFocusedInput: null,
   activeUpperTab: 'tab-chars',
-  activeLowerTab: 'tab-preview'
+  activeLowerTab: 'tab-preview',
+  globalMode: 'editor', // 'editor' | 'animator'
+  animator: {
+    isPlaying: false,
+    currentTick: 0,
+    totalTicks: 0,
+    playbackSpeed: 1,
+    chatMode: 'closed', // 'closed' | 'open'
+    bgMode: 'world',    // 'world' | 'dark' | 'black'
+    timerId: null,
+    events: [],
+    activeChatMessages: [],
+    activeSounds: []
+  }
 };
 
 // DOM Элементы
@@ -1764,7 +2393,39 @@ function initDomRefs() {
     // Чат контролы
     chatBgMode: document.getElementById('chat-bg-mode'),
     chatOpacitySlider: document.getElementById('chat-opacity-slider'),
-    chatOpacityVal: document.getElementById('chat-opacity-val')
+    chatOpacityVal: document.getElementById('chat-opacity-val'),
+
+    // Кинотеатр-Аниматор
+    btnModeEditor: document.getElementById('btn-mode-editor'),
+    btnModeAnimator: document.getElementById('btn-mode-animator'),
+    animatorView: document.getElementById('animator-view'),
+    animViewport: document.getElementById('anim-viewport'),
+    animBossbarWrap: document.getElementById('anim-bossbar-wrap'),
+    animBossbarTitle: document.getElementById('anim-bossbar-title'),
+    animBossbarBar: document.getElementById('anim-bossbar-bar'),
+    animBossbarFill: document.getElementById('anim-bossbar-fill'),
+    animTitleBox: document.getElementById('anim-title-box'),
+    animTitleText: document.getElementById('anim-title-text'),
+    animSubtitleBox: document.getElementById('anim-subtitle-box'),
+    animSubtitleText: document.getElementById('anim-subtitle-text'),
+    animChatWrap: document.getElementById('anim-chat-wrap'),
+    animChatMessages: document.getElementById('anim-chat-messages'),
+    animChatInputBar: document.getElementById('anim-chat-input-bar'),
+    animSoundSubtitles: document.getElementById('anim-sound-subtitles'),
+    animActionbarBox: document.getElementById('anim-actionbar-box'),
+    animActionbarText: document.getElementById('anim-actionbar-text'),
+    btnPlayPause: document.getElementById('btn-play-pause'),
+    btnPlayIcon: document.getElementById('btn-play-icon'),
+    btnPlayText: document.getElementById('btn-play-text'),
+    btnPlayerStop: document.getElementById('btn-player-stop'),
+    animCurrentTime: document.getElementById('anim-current-time'),
+    animTotalTime: document.getElementById('anim-total-time'),
+    animTicksBadge: document.getElementById('anim-ticks-badge'),
+    animTimelineSlider: document.getElementById('anim-timeline-slider'),
+    animStepLabel: document.getElementById('anim-step-label'),
+    animChatModeSelect: document.getElementById('anim-chat-mode-select'),
+    animSpeedSelect: document.getElementById('anim-speed-select'),
+    animBgSelect: document.getElementById('anim-bg-select')
   };
 }
 
@@ -1781,6 +2442,8 @@ function init() {
   setupChatControls();
   setupHelpModal();
   setupAutocomplete();
+  setupGlobalModes();
+  setupAnimatorControls();
   setupEventListeners();
   setupResizers();
   updateEditor();
@@ -2253,7 +2916,24 @@ function processScriptLines(text) {
       continue;
     }
 
-    // 3. Проверка тега показа: [title], [subtitle], [actionbar], [chat]
+    // 3. Проверка тега bossbar: [bossbar: red] Текст или [bossbar] Текст
+    const bossbarMatch = rawLine.match(/^\s*\[bossbar(?::\s*([a-zA-Z]+))?\]\s*(.*)$/i);
+    if (bossbarMatch) {
+      const barColor = (bossbarMatch[1] || 'purple').toLowerCase();
+      const barText = bossbarMatch[2] || '';
+      const tokens = parseMinecraftTokens(barText);
+      results.push({
+        lineIndex: idx + 1,
+        rawLine,
+        type: 'bossbar',
+        color: barColor,
+        text: barText,
+        tokens: tokens
+      });
+      continue;
+    }
+
+    // 4. Проверка тега показа: [title], [subtitle], [actionbar], [chat]
     let targetTag = 'chat';
     let lineToParse = rawLine;
 
@@ -2374,6 +3054,9 @@ function updateEditor() {
         if (item.type === 'wait') {
           return `<div class="mc-chat-wait-line"><span class="mc-badge mc-badge-wait">⏳ ${item.ticks} тиков (${(item.ticks / 20).toFixed(1)}с)</span>Пауза сценария</div>`;
         }
+        if (item.type === 'bossbar') {
+          return `<div class="mc-chat-line"><span class="mc-badge mc-badge-title">👑 Боссбар [${item.color}]</span>${tokensToHtml(item.tokens)}</div>`;
+        }
 
         const html = tokensToHtml(item.tokens);
         let badgeHtml = '';
@@ -2406,6 +3089,15 @@ function updateEditor() {
       return;
     }
 
+    if (item.type === 'bossbar') {
+      const json = tokensToTellrawJson(item.tokens);
+      commandLines.push(`bossbar set fluffy_boss name ${json}`);
+      commandLines.push(`bossbar set fluffy_boss color ${item.color}`);
+      commandLines.push(`bossbar set fluffy_boss players ${selector}`);
+      commandLines.push(`bossbar set fluffy_boss visible true`);
+      return;
+    }
+
     // Проигрывание звука перед обычными репликами чата (если включено)
     if (state.playSoundEnabled && state.playSoundName.trim() && item.tag === 'chat') {
       commandLines.push(`playsound ${state.playSoundName.trim()} voice ${selector} ~ ~ ~ 1 1`);
@@ -2421,7 +3113,7 @@ function updateEditor() {
       commandLines.push(`title ${selector} actionbar ${json}`);
     } else {
       // Обычный чат
-      if (state.format === 'tellraw') {
+      if (state.format === 'tellraw' || state.format === 'onecommand') {
         commandLines.push(`tellraw ${selector} ${json}`);
       } else if (state.format === 'json') {
         commandLines.push(json);
@@ -2432,10 +3124,151 @@ function updateEditor() {
   });
 
   if (els.exportCodeOutput) {
-    els.exportCodeOutput.textContent = commandLines.join('\n');
+    if (state.format === 'onecommand') {
+      els.exportCodeOutput.textContent = generateOneCommandBox(processed, selector);
+    } else {
+      els.exportCodeOutput.textContent = commandLines.join('\n');
+    }
   }
 
   saveToLocalStorage();
+}
+
+// --- Генератор One Command Box (через компактный конвейер вагонеток) ---
+function generateOneCommandBox(processed, selector) {
+  if (!processed || processed.length === 0) {
+    return '# Сценарий пуст. Добавьте реплики в редакторе!';
+  }
+
+  // 1. Формируем список игровых действий и пауз между ними
+  const actions = [];
+  let pendingDelay = 0;
+
+  processed.forEach(item => {
+    if (item.type === 'wait') {
+      pendingDelay += item.ticks;
+      return;
+    }
+
+    let cmd = '';
+    if (item.type === 'command') {
+      cmd = item.command.startsWith('/') ? item.command.slice(1) : item.command;
+    } else if (item.type === 'bossbar') {
+      const json = tokensToTellrawJson(item.tokens);
+      cmd = `bossbar set fluffy_boss name ${json}`;
+    } else if (item.type === 'dialogue') {
+      const json = tokensToTellrawJson(item.tokens);
+      if (item.tag === 'title') {
+        cmd = `title ${selector} title ${json}`;
+      } else if (item.tag === 'subtitle') {
+        cmd = `title ${selector} subtitle ${json}`;
+      } else if (item.tag === 'actionbar') {
+        cmd = `title ${selector} actionbar ${json}`;
+      } else {
+        cmd = `tellraw ${selector} ${json}`;
+      }
+    }
+
+    if (cmd) {
+      actions.push({
+        command: cmd,
+        delayBefore: pendingDelay
+      });
+      // По умолчанию между репликами даем 25 тиков, если задержка не указана
+      pendingDelay = 25;
+    }
+  });
+
+  if (actions.length === 0) {
+    return '# Нет команд для размещения в схеме.';
+  }
+
+  // 2. Раскладка цепочки по горизонтали в плоскости (X / Z)
+  // Базовая платформа из шерсти/камня под ногами: y = 0 (относительно КБ)
+  // На ней: КБ и повторители
+  const setblocks = [];
+  let curX = 1; // строим в направлении +X
+  let curZ = 0;
+  let dirX = 1; // направление змейки
+  const MAX_ROW_LENGTH = 12;
+
+  // Платформа под стартовый триггер
+  setblocks.push(`setblock ~1 ~-1 ~0 smooth_stone`);
+  setblocks.push(`setblock ~1 ~ ~0 stone_button[face=floor]`);
+
+  actions.forEach((act, actIdx) => {
+    // Раскладываем повторители для задержки act.delayBefore
+    if (actIdx > 0 && act.delayBefore > 0) {
+      let ticksLeft = act.delayBefore;
+      while (ticksLeft > 0) {
+        const repeaterDelay = Math.min(Math.max(Math.round(ticksLeft / 2), 1), 4);
+        ticksLeft -= repeaterDelay * 2;
+
+        curX += dirX;
+        if (Math.abs(curX) > MAX_ROW_LENGTH) {
+          curX -= dirX;
+          curZ += 2; // поворот змейки на соседний ряд
+          dirX = -dirX;
+        }
+
+        const facing = dirX > 0 ? 'east' : 'west';
+        setblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+        setblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=${repeaterDelay}]`);
+      }
+    }
+
+    // Ставим командный блок с нужной командой
+    curX += dirX;
+    if (Math.abs(curX) > MAX_ROW_LENGTH) {
+      curX -= dirX;
+      curZ += 2;
+      dirX = -dirX;
+    }
+
+    // Экранирование кавычек и слэшей для NBT
+    const escapedCmd = act.command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    setblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+    setblocks.push(`setblock ~${curX} ~ ~${curZ} command_block{Command:"${escapedCmd}"}`);
+  });
+
+  // 3. Формируем команду сбора через summon falling_block и пассажиров-вагонеток
+  // Все вагонетки спавнятся в ОДНОЙ точке на 1 тик на активаторном рельсе
+  const minecarts = [];
+
+  setblocks.forEach(sb => {
+    const esc = sb.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    minecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
+  });
+
+  // Завершающие вагонетки: удаление активаторного рельса, красного камня и самих вагонеток
+  minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~-1 ~ air"}`);
+  minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+  minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..3]"}`);
+
+  // Собираем вложенную структуру пассажиров
+  let passengerChain = minecarts[minecarts.length - 1];
+  for (let i = minecarts.length - 2; i >= 0; i--) {
+    const cur = minecarts[i];
+    // Вставляем следующую вагонетку в поле Passengers текущей
+    passengerChain = cur.slice(0, -1) + `,Passengers:[${passengerChain}]}`;
+  }
+
+  const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,Passengers:[${passengerChain}]}]}`;
+
+  const dimensionsNote = `# ========================================================
+# 📦 FluffyLore One Command Generator (1.16 - 1.21+)
+# Схема: горизонтальная змейка из повторителей и командных блоков
+# Необходимая площадка: примерно ${Math.min(curX + 2, MAX_ROW_LENGTH + 2)}×${curZ + 2} блоков в плоскости X/Z
+# Инструкция:
+# 1. Поставьте обычный командный блок в мир.
+# 2. Вставьте команду ниже и активируйте её (кнопкой или рычагом).
+# 3. Конструктор мгновенно расставит готовую схему и самоуничтожится!
+# 4. Нажмите появившуюся каменную кнопку на блоке (~1 ~0 ~0) для запуска катсцены.
+# ========================================================
+
+${oneCommand}`;
+
+  return dimensionsNote;
 }
 
 // --- Рендер карточек персонажей ---
@@ -3012,6 +3845,500 @@ function setupAutocomplete() {
       hideAutocomplete();
     }
   });
+}
+
+// --- Управление глобальными режимами (Редактор / Кинотеатр-Аниматор) ---
+function setupGlobalModes() {
+  const setMode = (mode) => {
+    state.globalMode = mode;
+    const isEditor = mode === 'editor';
+
+    if (els.btnModeEditor) els.btnModeEditor.classList.toggle('active', isEditor);
+    if (els.btnModeAnimator) els.btnModeAnimator.classList.toggle('active', !isEditor);
+
+    if (els.workspace) els.workspace.style.display = isEditor ? 'flex' : 'none';
+    if (els.animatorView) els.animatorView.style.display = !isEditor ? 'flex' : 'none';
+
+    if (!isEditor) {
+      buildAnimatorTimeline();
+      applyAnimatorBg(state.animator.bgMode);
+      applyAnimatorChatMode(state.animator.chatMode);
+    } else {
+      stopAnimator();
+    }
+  };
+
+  if (els.btnModeEditor) {
+    els.btnModeEditor.addEventListener('click', () => setMode('editor'));
+  }
+  if (els.btnModeAnimator) {
+    els.btnModeAnimator.addEventListener('click', () => setMode('animator'));
+  }
+}
+
+// Словарь русских названий частых звуков Minecraft для субтитров
+const MC_SOUND_NAMES = {
+  'entity.player.levelup': 'Уровень повышен',
+  'entity.experience_orb.pickup': 'Опыт подобран',
+  'entity.item.pickup': 'Предмет подобран',
+  'block.chest.open': 'Сундук открывается',
+  'block.chest.close': 'Сундук закрывается',
+  'entity.villager.ambient': 'Житель бормочет',
+  'entity.villager.yes': 'Житель соглашается',
+  'entity.villager.no': 'Житель отказывается',
+  'entity.lightning_bolt.thunder': 'Удар грома',
+  'entity.generic.explode': 'Взрыв',
+  'block.portal.ambient': 'Портал гудит',
+  'ui.button.click': 'Клик кнопки'
+};
+
+// --- Построение таймлайна катсцены для аниматора ---
+function buildAnimatorTimeline() {
+  const scriptText = els.scriptInput ? els.scriptInput.value : '';
+  const processed = processScriptLines(scriptText);
+  
+  let currentTick = 0;
+  const events = [];
+
+  processed.forEach((item, index) => {
+    if (item.type === 'wait') {
+      currentTick += item.ticks;
+      return;
+    }
+
+    if (item.type === 'command') {
+      // Проверяем, не playsound ли это
+      const soundMatch = item.command.match(/^\/playsound\s+([a-zA-Z0-9_.]+)/i);
+      if (soundMatch) {
+        const soundId = soundMatch[1];
+        events.push({
+          tick: currentTick,
+          type: 'sound',
+          soundId: soundId,
+          label: MC_SOUND_NAMES[soundId] || soundId
+        });
+      } else {
+        events.push({
+          tick: currentTick,
+          type: 'raw_command',
+          command: item.command
+        });
+      }
+      return;
+    }
+
+    if (item.type === 'bossbar') {
+      events.push({
+        tick: currentTick,
+        type: 'bossbar',
+        color: item.color,
+        tokens: item.tokens
+      });
+      return;
+    }
+
+    // Dialogue (title, subtitle, actionbar, chat)
+    if (item.type === 'dialogue') {
+      events.push({
+        tick: currentTick,
+        type: item.tag, // 'title' | 'subtitle' | 'actionbar' | 'chat'
+        tokens: item.tokens,
+        lineIndex: item.lineIndex
+      });
+
+      // Если в настройках включен звук для реплик
+      if (state.playSoundEnabled && item.tag === 'chat' && state.playSoundName) {
+        const snd = state.playSoundName.trim();
+        events.push({
+          tick: currentTick,
+          type: 'sound',
+          soundId: snd,
+          label: MC_SOUND_NAMES[snd] || snd
+        });
+      }
+
+      // Если после реплики нет явного wait, даем базовый шаг времени (35 тиков = 1.75 сек на фразу)
+      const nextItem = processed[index + 1];
+      if (!nextItem || nextItem.type !== 'wait') {
+        currentTick += 35;
+      }
+    }
+  });
+
+  // Завершающая буферная пауза в конце
+  const totalTicks = Math.max(currentTick + 20, 40);
+  state.animator.totalTicks = totalTicks;
+  state.animator.events = events;
+
+  if (els.animTimelineSlider) {
+    els.animTimelineSlider.max = totalTicks;
+    els.animTimelineSlider.value = state.animator.currentTick;
+  }
+
+  updateTimelineLabels();
+}
+
+function updateTimelineLabels() {
+  const curSec = (state.animator.currentTick / 20).toFixed(1);
+  const totSec = (state.animator.totalTicks / 20).toFixed(1);
+
+  if (els.animCurrentTime) {
+    const mins = Math.floor(curSec / 60);
+    const secs = Math.floor(curSec % 60);
+    els.animCurrentTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  if (els.animTotalTime) {
+    const mins = Math.floor(totSec / 60);
+    const secs = Math.floor(totSec % 60);
+    els.animTotalTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  if (els.animTicksBadge) {
+    els.animTicksBadge.textContent = `${state.animator.currentTick} / ${state.animator.totalTicks} тиков`;
+  }
+}
+
+// --- Управление плеером Аниматора ---
+function setupAnimatorControls() {
+  if (els.btnPlayPause) {
+    els.btnPlayPause.addEventListener('click', toggleAnimatorPlay);
+  }
+
+  if (els.btnPlayerStop) {
+    els.btnPlayerStop.addEventListener('click', resetAnimator);
+  }
+
+  if (els.animTimelineSlider) {
+    els.animTimelineSlider.addEventListener('input', (e) => {
+      const targetTick = parseInt(e.target.value, 10);
+      seekAnimatorTo(targetTick);
+    });
+  }
+
+  if (els.animSpeedSelect) {
+    els.animSpeedSelect.addEventListener('change', (e) => {
+      state.animator.playbackSpeed = parseFloat(e.target.value) || 1;
+      if (state.animator.isPlaying) {
+        restartTimer();
+      }
+    });
+  }
+
+  if (els.animChatModeSelect) {
+    els.animChatModeSelect.addEventListener('change', (e) => {
+      state.animator.chatMode = e.target.value;
+      applyAnimatorChatMode(state.animator.chatMode);
+    });
+  }
+
+  if (els.animBgSelect) {
+    els.animBgSelect.addEventListener('change', (e) => {
+      state.animator.bgMode = e.target.value;
+      applyAnimatorBg(state.animator.bgMode);
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (state.globalMode === 'animator' && e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      toggleAnimatorPlay();
+    }
+  });
+}
+
+function applyAnimatorBg(mode) {
+  if (!els.animViewport) return;
+  els.animViewport.classList.remove('bg-world', 'bg-dark', 'bg-black');
+  els.animViewport.classList.add(`bg-${mode}`);
+}
+
+function applyAnimatorChatMode(mode) {
+  if (els.animChatInputBar) {
+    els.animChatInputBar.style.display = (mode === 'open') ? 'flex' : 'none';
+  }
+}
+
+function toggleAnimatorPlay() {
+  if (state.animator.isPlaying) {
+    pauseAnimator();
+  } else {
+    playAnimator();
+  }
+}
+
+function playAnimator() {
+  if (state.animator.currentTick >= state.animator.totalTicks) {
+    resetAnimator();
+  }
+
+  state.animator.isPlaying = true;
+  if (els.btnPlayIcon) els.btnPlayIcon.textContent = '⏸️';
+  if (els.btnPlayText) els.btnPlayText.textContent = 'Пауза';
+
+  restartTimer();
+}
+
+function pauseAnimator() {
+  state.animator.isPlaying = false;
+  if (els.btnPlayIcon) els.btnPlayIcon.textContent = '▶️';
+  if (els.btnPlayText) els.btnPlayText.textContent = 'Старт';
+
+  if (state.animator.timerId) {
+    clearInterval(state.animator.timerId);
+    state.animator.timerId = null;
+  }
+}
+
+function stopAnimator() {
+  pauseAnimator();
+  resetAnimator();
+}
+
+function resetAnimator() {
+  pauseAnimator();
+  state.animator.currentTick = 0;
+  clearAllViewportElements();
+  if (els.animTimelineSlider) els.animTimelineSlider.value = 0;
+  if (els.animStepLabel) els.animStepLabel.textContent = 'Готов к воспроизведению';
+  updateTimelineLabels();
+}
+
+function restartTimer() {
+  if (state.animator.timerId) {
+    clearInterval(state.animator.timerId);
+  }
+  // 1 тик Minecraft = 50 мс
+  const interval = Math.max(15, Math.round(50 / state.animator.playbackSpeed));
+  state.animator.timerId = setInterval(animatorTickStep, interval);
+}
+
+function animatorTickStep() {
+  state.animator.currentTick++;
+  
+  if (els.animTimelineSlider) {
+    els.animTimelineSlider.value = state.animator.currentTick;
+  }
+  updateTimelineLabels();
+
+  // Обрабатываем события, приходящиеся на данный тик
+  renderEventsAtTick(state.animator.currentTick);
+
+  // Очистка / затухание сообщений чата (если закрыт)
+  stepChatFade();
+  // Затухание звуковых субтитров
+  stepSoundSubtitlesFade();
+
+  if (state.animator.currentTick >= state.animator.totalTicks) {
+    pauseAnimator();
+    if (els.animStepLabel) els.animStepLabel.textContent = '🏁 Катсцена завершена';
+  }
+}
+
+function seekAnimatorTo(tick) {
+  state.animator.currentTick = tick;
+  clearAllViewportElements();
+
+  // Воспроизводим события вплоть до этой точки
+  const evs = state.animator.events.filter(e => e.tick <= tick);
+  evs.forEach(ev => {
+    // Для чата добавляем только те, которые произошли недавно (до 100 тиков назад)
+    if (ev.type === 'chat' && (tick - ev.tick) < 100) {
+      displayChatMessage(ev.tokens, 100 - (tick - ev.tick));
+    } else if (ev.type === 'title' && (tick - ev.tick) < 80) {
+      displayTitle(ev.tokens, 80 - (tick - ev.tick));
+    } else if (ev.type === 'subtitle' && (tick - ev.tick) < 80) {
+      displaySubtitle(ev.tokens, 80 - (tick - ev.tick));
+    } else if (ev.type === 'actionbar' && (tick - ev.tick) < 60) {
+      displayActionbar(ev.tokens, 60 - (tick - ev.tick));
+    } else if (ev.type === 'bossbar') {
+      displayBossbar(ev.color, ev.tokens);
+    }
+  });
+
+  updateTimelineLabels();
+}
+
+function clearAllViewportElements() {
+  if (els.animTitleBox) {
+    els.animTitleBox.style.display = 'none';
+    els.animTitleBox.style.opacity = '1';
+  }
+  if (els.animSubtitleBox) {
+    els.animSubtitleBox.style.display = 'none';
+    els.animSubtitleBox.style.opacity = '1';
+  }
+  if (els.animActionbarBox) {
+    els.animActionbarBox.style.display = 'none';
+    els.animActionbarBox.style.opacity = '1';
+  }
+  if (els.animChatMessages) {
+    els.animChatMessages.innerHTML = '';
+  }
+  if (els.animSoundSubtitles) {
+    els.animSoundSubtitles.innerHTML = '';
+  }
+  state.animator.activeChatMessages = [];
+  state.animator.activeSounds = [];
+}
+
+// Отображение событий в конкретный тик
+function renderEventsAtTick(tick) {
+  const currentEvents = state.animator.events.filter(e => e.tick === tick);
+
+  currentEvents.forEach(ev => {
+    if (ev.type === 'title') {
+      displayTitle(ev.tokens, 80);
+      if (els.animStepLabel) els.animStepLabel.textContent = `🎬 [Тайтл]`;
+    } else if (ev.type === 'subtitle') {
+      displaySubtitle(ev.tokens, 80);
+      if (els.animStepLabel) els.animStepLabel.textContent = `📄 [Сабтайтл]`;
+    } else if (ev.type === 'actionbar') {
+      displayActionbar(ev.tokens, 60);
+      if (els.animStepLabel) els.animStepLabel.textContent = `⚡ [Экшнбар]`;
+    } else if (ev.type === 'chat') {
+      displayChatMessage(ev.tokens, 100);
+      if (els.animStepLabel) els.animStepLabel.textContent = `💬 [Чат] Реплика`;
+    } else if (ev.type === 'sound') {
+      displaySoundSubtitle(ev.label, 60);
+    } else if (ev.type === 'bossbar') {
+      displayBossbar(ev.color, ev.tokens);
+    }
+  });
+}
+
+// Показ Title
+function displayTitle(tokens, durationTicks = 80) {
+  if (!els.animTitleBox || !els.animTitleText) return;
+  els.animTitleText.innerHTML = tokensToHtml(tokens);
+  els.animTitleBox.style.display = 'block';
+  els.animTitleBox.style.opacity = '1';
+
+  clearTimeout(els.animTitleBox._timer);
+  els.animTitleBox._timer = setTimeout(() => {
+    els.animTitleBox.style.opacity = '0';
+    setTimeout(() => {
+      if (els.animTitleBox.style.opacity === '0') els.animTitleBox.style.display = 'none';
+    }, 500);
+  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
+}
+
+// Показ Subtitle
+function displaySubtitle(tokens, durationTicks = 80) {
+  if (!els.animSubtitleBox || !els.animSubtitleText) return;
+  els.animSubtitleText.innerHTML = tokensToHtml(tokens);
+  els.animSubtitleBox.style.display = 'block';
+  els.animSubtitleBox.style.opacity = '1';
+
+  clearTimeout(els.animSubtitleBox._timer);
+  els.animSubtitleBox._timer = setTimeout(() => {
+    els.animSubtitleBox.style.opacity = '0';
+    setTimeout(() => {
+      if (els.animSubtitleBox.style.opacity === '0') els.animSubtitleBox.style.display = 'none';
+    }, 500);
+  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
+}
+
+// Показ Actionbar
+function displayActionbar(tokens, durationTicks = 60) {
+  if (!els.animActionbarBox || !els.animActionbarText) return;
+  els.animActionbarText.innerHTML = tokensToHtml(tokens);
+  els.animActionbarBox.style.display = 'block';
+  els.animActionbarBox.style.opacity = '1';
+
+  clearTimeout(els.animActionbarBox._timer);
+  els.animActionbarBox._timer = setTimeout(() => {
+    els.animActionbarBox.style.opacity = '0';
+    setTimeout(() => {
+      if (els.animActionbarBox.style.opacity === '0') els.animActionbarBox.style.display = 'none';
+    }, 400);
+  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
+}
+
+// Показ Bossbar
+function displayBossbar(color, tokens) {
+  if (!els.animBossbarWrap || !els.animBossbarTitle || !els.animBossbarBar) return;
+  els.animBossbarTitle.innerHTML = tokensToHtml(tokens);
+  els.animBossbarBar.className = `anim-bossbar-bar color-${color || 'purple'}`;
+  els.animBossbarWrap.style.display = 'flex';
+}
+
+// Показ сообщения в чате Minecraft
+function displayChatMessage(tokens, remainingTicks = 100) {
+  if (!els.animChatMessages) return;
+
+  const lineEl = document.createElement('div');
+  lineEl.className = 'anim-chat-line';
+  lineEl.innerHTML = tokensToHtml(tokens);
+  els.animChatMessages.appendChild(lineEl);
+
+  state.animator.activeChatMessages.push({
+    el: lineEl,
+    remainingTicks: remainingTicks
+  });
+
+  // Ограничиваем историю чата 15 последними строками
+  if (els.animChatMessages.children.length > 15) {
+    els.animChatMessages.removeChild(els.animChatMessages.firstChild);
+  }
+}
+
+// Шаг затухания чата
+function stepChatFade() {
+  if (state.animator.chatMode === 'open') return; // В открытом чате реплики не тают
+
+  for (let i = state.animator.activeChatMessages.length - 1; i >= 0; i--) {
+    const item = state.animator.activeChatMessages[i];
+    item.remainingTicks--;
+
+    if (item.remainingTicks <= 20 && !item.el.classList.contains('fading')) {
+      item.el.classList.add('fading');
+    }
+
+    if (item.remainingTicks <= 0) {
+      if (item.el.parentNode) {
+        item.el.parentNode.removeChild(item.el);
+      }
+      state.animator.activeChatMessages.splice(i, 1);
+    }
+  }
+}
+
+// Показ субтитра звука Minecraft
+function displaySoundSubtitle(label, remainingTicks = 60) {
+  if (!els.animSoundSubtitles) return;
+
+  const chip = document.createElement('div');
+  chip.className = 'anim-sound-chip';
+  chip.innerHTML = `
+    <span class=\"anim-sound-icon\">🔔</span>
+    <span class=\"anim-sound-text\">${escapeHtml(label)}</span>
+    <span class=\"anim-sound-arrow\">&gt;</span>
+  `;
+  els.animSoundSubtitles.appendChild(chip);
+
+  state.animator.activeSounds.push({
+    el: chip,
+    remainingTicks: remainingTicks
+  });
+}
+
+function stepSoundSubtitlesFade() {
+  for (let i = state.animator.activeSounds.length - 1; i >= 0; i--) {
+    const item = state.animator.activeSounds[i];
+    item.remainingTicks--;
+
+    if (item.remainingTicks <= 15 && !item.el.classList.contains('fading')) {
+      item.el.classList.add('fading');
+    }
+
+    if (item.remainingTicks <= 0) {
+      if (item.el.parentNode) {
+        item.el.parentNode.removeChild(item.el);
+      }
+      state.animator.activeSounds.splice(i, 1);
+    }
+  }
 }
 
 // --- Анимация Minecraft Obfuscated (&k) ---

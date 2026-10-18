@@ -19,6 +19,18 @@
         <p class="logo-subtitle">Пушистый редактор диалогов и генератор /tellraw команд</p>
       </div>
     </div>
+
+    <!-- Переключатель глобальных режимов: Редактор / Аниматор -->
+    <div class="view-mode-switcher">
+      <button class="mode-tab-btn active" id="btn-mode-editor" title="Перейти в текстовый редактор сценария">
+        <span class="icon">📝</span> <span>Редактор сценария</span>
+      </button>
+      <button class="mode-tab-btn" id="btn-mode-animator" title="Перейти в полноэкранный кинотеатр-аниматор катсцены">
+        <span class="icon">🎬</span> <span>Кинотеатр-Аниматор</span>
+        <span class="mode-badge-pulse">NEW</span>
+      </button>
+    </div>
+
     <div class="header-actions">
       <button class="btn btn-secondary btn-sm" id="btn-sample-data" title="Загрузить милый пример диалога Сенко и Широ">
         <span>✨ Пример (Сенко и Широ)</span>
@@ -277,6 +289,7 @@
               <label for="export-format">Формат:</label>
               <select id="export-format" class="select-sm">
                 <option value="tellraw">Команда /tellraw</option>
+                <option value="onecommand">📦 One Command (Для командного блока)</option>
                 <option value="json">Чистый JSON массив</option>
                 <option value="legacy">С параграфами (§-коды)</option>
               </select>
@@ -324,6 +337,121 @@
     </section>
   </main>
 
+  <!-- Полноэкранный Кинотеатр-Аниматор Катсцены -->
+  <div class="animator-view" id="animator-view" style="display: none;">
+    <!-- Видовой экран игры Minecraft -->
+    <div class="anim-viewport" id="anim-viewport">
+      
+      <!-- Верхняя зона: Bossbar (Боссбар) -->
+      <div class="anim-bossbar-wrap" id="anim-bossbar-wrap" style="display: none;">
+        <div class="anim-bossbar-title" id="anim-bossbar-title">Боссбар</div>
+        <div class="anim-bossbar-bar color-purple" id="anim-bossbar-bar">
+          <div class="anim-bossbar-fill" id="anim-bossbar-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Центральная зона: Большой Title и Subtitle с подложкой -->
+      <div class="anim-center-titles-wrap" id="anim-center-titles-wrap">
+        <div class="anim-title-box" id="anim-title-box" style="display: none;">
+          <div class="anim-title-text" id="anim-title-text"></div>
+        </div>
+        <div class="anim-subtitle-box" id="anim-subtitle-box" style="display: none;">
+          <div class="anim-subtitle-text" id="anim-subtitle-text"></div>
+        </div>
+      </div>
+
+      <!-- Нижняя левая зона: Игровой чат -->
+      <div class="anim-chat-wrap" id="anim-chat-wrap">
+        <div class="anim-chat-messages" id="anim-chat-messages"></div>
+        <div class="anim-chat-input-bar" id="anim-chat-input-bar" style="display: none;">
+          <span class="anim-chat-prompt">&gt;</span>
+          <span class="anim-chat-cursor">_</span>
+        </div>
+      </div>
+
+      <!-- Нижняя правая зона: Аутентичные субтитры звуков Minecraft (Show Subtitles) -->
+      <div class="anim-sound-subtitles" id="anim-sound-subtitles"></div>
+
+      <!-- Нижняя центральная зона: Actionbar + Хотбар -->
+      <div class="anim-bottom-hud">
+        <!-- Всплывающий Actionbar -->
+        <div class="anim-actionbar-box" id="anim-actionbar-box" style="display: none;">
+          <div class="anim-actionbar-text" id="anim-actionbar-text"></div>
+        </div>
+
+        <!-- Аутентичный хотбар Minecraft на 9 слотов -->
+        <div class="anim-hotbar">
+          <div class="anim-hotbar-slot selected"><span class="slot-item">🗡️</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">🛡️</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">🍞</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">🍵</span></div>
+          <div class="anim-hotbar-slot"><span class="slot-item">📜</span></div>
+          <div class="anim-hotbar-slot"></div>
+          <div class="anim-hotbar-slot"></div>
+          <div class="anim-hotbar-slot"></div>
+          <div class="anim-hotbar-slot"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Панель управления воспроизведением (Плеер катсцены) -->
+    <div class="anim-player-panel" id="anim-player-panel">
+      <div class="player-controls-left">
+        <button class="btn btn-primary btn-sm" id="btn-play-pause" title="Запуск/Пауза воспроизведения (Пробел)">
+          <span id="btn-play-icon">▶️</span> <span id="btn-play-text">Старт</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-player-stop" title="Остановить и сбросить в начало">
+          <span>⏹️ В начало</span>
+        </button>
+        <div class="player-time-display">
+          <span class="current-time" id="anim-current-time">00:00</span>
+          <span class="time-sep">/</span>
+          <span class="total-time" id="anim-total-time">00:00</span>
+          <span class="ticks-badge" id="anim-ticks-badge">0 тиков</span>
+        </div>
+      </div>
+
+      <!-- Ползунок таймлайна катсцены -->
+      <div class="player-timeline-wrap">
+        <input type="range" class="player-timeline-slider" id="anim-timeline-slider" min="0" max="100" value="0" step="1">
+        <div class="timeline-step-label" id="anim-step-label">Сценарий готов к воспроизведению</div>
+      </div>
+
+      <div class="player-controls-right">
+        <!-- Режим чата: открыт / закрыт -->
+        <div class="player-opt-item">
+          <label for="anim-chat-mode-select">Чат:</label>
+          <select id="anim-chat-mode-select" class="select-xs">
+            <option value="closed">Закрыт (исчезает через 5с)</option>
+            <option value="open">Открыт (с полем ввода)</option>
+          </select>
+        </div>
+
+        <!-- Скорость -->
+        <div class="player-opt-item">
+          <label for="anim-speed-select">Скорость:</label>
+          <select id="anim-speed-select" class="select-xs">
+            <option value="0.5">0.5x</option>
+            <option value="1" selected>1.0x</option>
+            <option value="1.5">1.5x</option>
+            <option value="2">2.0x</option>
+          </select>
+        </div>
+
+        <!-- Фон аниматора -->
+        <div class="player-opt-item">
+          <label for="anim-bg-select">Фон:</label>
+          <select id="anim-bg-select" class="select-xs">
+            <option value="world">Мир Minecraft 🌳</option>
+            <option value="dark">Тёмный 🌙</option>
+            <option value="black">Чёрный ⬛</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Модальное окно: Справка по формату диалогов и команд FluffyLore -->
   <div class="modal-backdrop" id="modal-help-backdrop" style="display:none;">
     <div class="modal-dialog">
@@ -353,9 +481,21 @@
             <li><code>[title] Текст</code> — большой заголовок по центру экрана (команда <code>/title &lt;target&gt; title ...</code>).</li>
             <li><code>[subtitle] Текст</code> — подзаголовок чуть ниже (команда <code>/title &lt;target&gt; subtitle ...</code>).</li>
             <li><code>[actionbar] Текст</code> — аккуратный текст над хотбаром (команда <code>/title &lt;target&gt; actionbar ...</code>).</li>
+            <li><code>[bossbar: red] Текст</code> — полоска босса сверху экрана (цвета: red, purple, blue, green, yellow, white).</li>
             <li><code>[chat] Текст</code> — обычное сообщение в чат (эквивалентно строке без тега).</li>
             <li><code>[wait: 20]</code> или <code>[delay: 40]</code> — маркер задержки в тиках (20 тиков = 1 секунда) для аниматора и командных блоков.</li>
           </ul>
+        </section>
+
+        <section class="help-section">
+          <h4>🎬 Кинотеатр-Аниматор</h4>
+          <p>Переключитесь в режим <b>«🎬 Кинотеатр-Аниматор»</b> в верхней панели. Вы увидите полноценную симуляцию экрана Minecraft с таймлайном, хотбаром, субтитрами звуков справа внизу и исчезающим чатом!</p>
+        </section>
+
+        <section class="help-section">
+          <h4>📦 One Command (Генератор схемы из одной команды)</h4>
+          <p>На вкладке «Экспорт» выберите формат <b>📦 One Command</b>. FluffyLore сгенерирует одну команду для командного блока, которая при активации создаст компактный конвейер из вагонеток, аккуратно расставит змейку из повторителей и командных блоков прямо в мире игры, и самоуничтожится!</p>
+        </section>
         </section>
 
         <section class="help-section">

@@ -97,7 +97,20 @@ const state = {
   editorHintsEnabled: true,
   lastFocusedInput: null,
   activeUpperTab: 'tab-chars',
-  activeLowerTab: 'tab-preview'
+  activeLowerTab: 'tab-preview',
+  globalMode: 'editor', // 'editor' | 'animator'
+  animator: {
+    isPlaying: false,
+    currentTick: 0,
+    totalTicks: 0,
+    playbackSpeed: 1,
+    chatMode: 'closed', // 'closed' | 'open'
+    bgMode: 'world',    // 'world' | 'dark' | 'black'
+    timerId: null,
+    events: [],
+    activeChatMessages: [],
+    activeSounds: []
+  }
 };
 
 // DOM Элементы
@@ -176,7 +189,39 @@ function initDomRefs() {
     // Чат контролы
     chatBgMode: document.getElementById('chat-bg-mode'),
     chatOpacitySlider: document.getElementById('chat-opacity-slider'),
-    chatOpacityVal: document.getElementById('chat-opacity-val')
+    chatOpacityVal: document.getElementById('chat-opacity-val'),
+
+    // Кинотеатр-Аниматор
+    btnModeEditor: document.getElementById('btn-mode-editor'),
+    btnModeAnimator: document.getElementById('btn-mode-animator'),
+    animatorView: document.getElementById('animator-view'),
+    animViewport: document.getElementById('anim-viewport'),
+    animBossbarWrap: document.getElementById('anim-bossbar-wrap'),
+    animBossbarTitle: document.getElementById('anim-bossbar-title'),
+    animBossbarBar: document.getElementById('anim-bossbar-bar'),
+    animBossbarFill: document.getElementById('anim-bossbar-fill'),
+    animTitleBox: document.getElementById('anim-title-box'),
+    animTitleText: document.getElementById('anim-title-text'),
+    animSubtitleBox: document.getElementById('anim-subtitle-box'),
+    animSubtitleText: document.getElementById('anim-subtitle-text'),
+    animChatWrap: document.getElementById('anim-chat-wrap'),
+    animChatMessages: document.getElementById('anim-chat-messages'),
+    animChatInputBar: document.getElementById('anim-chat-input-bar'),
+    animSoundSubtitles: document.getElementById('anim-sound-subtitles'),
+    animActionbarBox: document.getElementById('anim-actionbar-box'),
+    animActionbarText: document.getElementById('anim-actionbar-text'),
+    btnPlayPause: document.getElementById('btn-play-pause'),
+    btnPlayIcon: document.getElementById('btn-play-icon'),
+    btnPlayText: document.getElementById('btn-play-text'),
+    btnPlayerStop: document.getElementById('btn-player-stop'),
+    animCurrentTime: document.getElementById('anim-current-time'),
+    animTotalTime: document.getElementById('anim-total-time'),
+    animTicksBadge: document.getElementById('anim-ticks-badge'),
+    animTimelineSlider: document.getElementById('anim-timeline-slider'),
+    animStepLabel: document.getElementById('anim-step-label'),
+    animChatModeSelect: document.getElementById('anim-chat-mode-select'),
+    animSpeedSelect: document.getElementById('anim-speed-select'),
+    animBgSelect: document.getElementById('anim-bg-select')
   };
 }
 
@@ -193,6 +238,8 @@ function init() {
   setupChatControls();
   setupHelpModal();
   setupAutocomplete();
+  setupGlobalModes();
+  setupAnimatorControls();
   setupEventListeners();
   setupResizers();
   updateEditor();
@@ -665,7 +712,24 @@ function processScriptLines(text) {
       continue;
     }
 
-    // 3. Проверка тега показа: [title], [subtitle], [actionbar], [chat]
+    // 3. Проверка тега bossbar: [bossbar: red] Текст или [bossbar] Текст
+    const bossbarMatch = rawLine.match(/^\s*\[bossbar(?::\s*([a-zA-Z]+))?\]\s*(.*)$/i);
+    if (bossbarMatch) {
+      const barColor = (bossbarMatch[1] || 'purple').toLowerCase();
+      const barText = bossbarMatch[2] || '';
+      const tokens = parseMinecraftTokens(barText);
+      results.push({
+        lineIndex: idx + 1,
+        rawLine,
+        type: 'bossbar',
+        color: barColor,
+        text: barText,
+        tokens: tokens
+      });
+      continue;
+    }
+
+    // 4. Проверка тега показа: [title], [subtitle], [actionbar], [chat]
     let targetTag = 'chat';
     let lineToParse = rawLine;
 
@@ -786,6 +850,9 @@ function updateEditor() {
         if (item.type === 'wait') {
           return `<div class="mc-chat-wait-line"><span class="mc-badge mc-badge-wait">⏳ ${item.ticks} тиков (${(item.ticks / 20).toFixed(1)}с)</span>Пауза сценария</div>`;
         }
+        if (item.type === 'bossbar') {
+          return `<div class="mc-chat-line"><span class="mc-badge mc-badge-title">👑 Боссбар [${item.color}]</span>${tokensToHtml(item.tokens)}</div>`;
+        }
 
         const html = tokensToHtml(item.tokens);
         let badgeHtml = '';
@@ -818,6 +885,15 @@ function updateEditor() {
       return;
     }
 
+    if (item.type === 'bossbar') {
+      const json = tokensToTellrawJson(item.tokens);
+      commandLines.push(`bossbar set fluffy_boss name ${json}`);
+      commandLines.push(`bossbar set fluffy_boss color ${item.color}`);
+      commandLines.push(`bossbar set fluffy_boss players ${selector}`);
+      commandLines.push(`bossbar set fluffy_boss visible true`);
+      return;
+    }
+
     // Проигрывание звука перед обычными репликами чата (если включено)
     if (state.playSoundEnabled && state.playSoundName.trim() && item.tag === 'chat') {
       commandLines.push(`playsound ${state.playSoundName.trim()} voice ${selector} ~ ~ ~ 1 1`);
@@ -833,7 +909,7 @@ function updateEditor() {
       commandLines.push(`title ${selector} actionbar ${json}`);
     } else {
       // Обычный чат
-      if (state.format === 'tellraw') {
+      if (state.format === 'tellraw' || state.format === 'onecommand') {
         commandLines.push(`tellraw ${selector} ${json}`);
       } else if (state.format === 'json') {
         commandLines.push(json);
@@ -844,10 +920,151 @@ function updateEditor() {
   });
 
   if (els.exportCodeOutput) {
-    els.exportCodeOutput.textContent = commandLines.join('\n');
+    if (state.format === 'onecommand') {
+      els.exportCodeOutput.textContent = generateOneCommandBox(processed, selector);
+    } else {
+      els.exportCodeOutput.textContent = commandLines.join('\n');
+    }
   }
 
   saveToLocalStorage();
+}
+
+// --- Генератор One Command Box (через компактный конвейер вагонеток) ---
+function generateOneCommandBox(processed, selector) {
+  if (!processed || processed.length === 0) {
+    return '# Сценарий пуст. Добавьте реплики в редакторе!';
+  }
+
+  // 1. Формируем список игровых действий и пауз между ними
+  const actions = [];
+  let pendingDelay = 0;
+
+  processed.forEach(item => {
+    if (item.type === 'wait') {
+      pendingDelay += item.ticks;
+      return;
+    }
+
+    let cmd = '';
+    if (item.type === 'command') {
+      cmd = item.command.startsWith('/') ? item.command.slice(1) : item.command;
+    } else if (item.type === 'bossbar') {
+      const json = tokensToTellrawJson(item.tokens);
+      cmd = `bossbar set fluffy_boss name ${json}`;
+    } else if (item.type === 'dialogue') {
+      const json = tokensToTellrawJson(item.tokens);
+      if (item.tag === 'title') {
+        cmd = `title ${selector} title ${json}`;
+      } else if (item.tag === 'subtitle') {
+        cmd = `title ${selector} subtitle ${json}`;
+      } else if (item.tag === 'actionbar') {
+        cmd = `title ${selector} actionbar ${json}`;
+      } else {
+        cmd = `tellraw ${selector} ${json}`;
+      }
+    }
+
+    if (cmd) {
+      actions.push({
+        command: cmd,
+        delayBefore: pendingDelay
+      });
+      // По умолчанию между репликами даем 25 тиков, если задержка не указана
+      pendingDelay = 25;
+    }
+  });
+
+  if (actions.length === 0) {
+    return '# Нет команд для размещения в схеме.';
+  }
+
+  // 2. Раскладка цепочки по горизонтали в плоскости (X / Z)
+  // Базовая платформа из шерсти/камня под ногами: y = 0 (относительно КБ)
+  // На ней: КБ и повторители
+  const setblocks = [];
+  let curX = 1; // строим в направлении +X
+  let curZ = 0;
+  let dirX = 1; // направление змейки
+  const MAX_ROW_LENGTH = 12;
+
+  // Платформа под стартовый триггер
+  setblocks.push(`setblock ~1 ~-1 ~0 smooth_stone`);
+  setblocks.push(`setblock ~1 ~ ~0 stone_button[face=floor]`);
+
+  actions.forEach((act, actIdx) => {
+    // Раскладываем повторители для задержки act.delayBefore
+    if (actIdx > 0 && act.delayBefore > 0) {
+      let ticksLeft = act.delayBefore;
+      while (ticksLeft > 0) {
+        const repeaterDelay = Math.min(Math.max(Math.round(ticksLeft / 2), 1), 4);
+        ticksLeft -= repeaterDelay * 2;
+
+        curX += dirX;
+        if (Math.abs(curX) > MAX_ROW_LENGTH) {
+          curX -= dirX;
+          curZ += 2; // поворот змейки на соседний ряд
+          dirX = -dirX;
+        }
+
+        const facing = dirX > 0 ? 'east' : 'west';
+        setblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+        setblocks.push(`setblock ~${curX} ~ ~${curZ} repeater[facing=${facing},delay=${repeaterDelay}]`);
+      }
+    }
+
+    // Ставим командный блок с нужной командой
+    curX += dirX;
+    if (Math.abs(curX) > MAX_ROW_LENGTH) {
+      curX -= dirX;
+      curZ += 2;
+      dirX = -dirX;
+    }
+
+    // Экранирование кавычек и слэшей для NBT
+    const escapedCmd = act.command.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    setblocks.push(`setblock ~${curX} ~-1 ~${curZ} smooth_stone`);
+    setblocks.push(`setblock ~${curX} ~ ~${curZ} command_block{Command:"${escapedCmd}"}`);
+  });
+
+  // 3. Формируем команду сбора через summon falling_block и пассажиров-вагонеток
+  // Все вагонетки спавнятся в ОДНОЙ точке на 1 тик на активаторном рельсе
+  const minecarts = [];
+
+  setblocks.forEach(sb => {
+    const esc = sb.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    minecarts.push(`{id:"command_block_minecart",Command:"${esc}"}`);
+  });
+
+  // Завершающие вагонетки: удаление активаторного рельса, красного камня и самих вагонеток
+  minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~-1 ~ air"}`);
+  minecarts.push(`{id:"command_block_minecart",Command:"setblock ~ ~ ~ air"}`);
+  minecarts.push(`{id:"command_block_minecart",Command:"kill @e[type=command_block_minecart,distance=..3]"}`);
+
+  // Собираем вложенную структуру пассажиров
+  let passengerChain = minecarts[minecarts.length - 1];
+  for (let i = minecarts.length - 2; i >= 0; i--) {
+    const cur = minecarts[i];
+    // Вставляем следующую вагонетку в поле Passengers текущей
+    passengerChain = cur.slice(0, -1) + `,Passengers:[${passengerChain}]}`;
+  }
+
+  const oneCommand = `/summon falling_block ~ ~1 ~ {BlockState:{Name:"redstone_block"},Time:1,Passengers:[{id:"falling_block",BlockState:{Name:"activator_rail"},Time:1,Passengers:[${passengerChain}]}]}`;
+
+  const dimensionsNote = `# ========================================================
+# 📦 FluffyLore One Command Generator (1.16 - 1.21+)
+# Схема: горизонтальная змейка из повторителей и командных блоков
+# Необходимая площадка: примерно ${Math.min(curX + 2, MAX_ROW_LENGTH + 2)}×${curZ + 2} блоков в плоскости X/Z
+# Инструкция:
+# 1. Поставьте обычный командный блок в мир.
+# 2. Вставьте команду ниже и активируйте её (кнопкой или рычагом).
+# 3. Конструктор мгновенно расставит готовую схему и самоуничтожится!
+# 4. Нажмите появившуюся каменную кнопку на блоке (~1 ~0 ~0) для запуска катсцены.
+# ========================================================
+
+${oneCommand}`;
+
+  return dimensionsNote;
 }
 
 // --- Рендер карточек персонажей ---
@@ -1424,6 +1641,500 @@ function setupAutocomplete() {
       hideAutocomplete();
     }
   });
+}
+
+// --- Управление глобальными режимами (Редактор / Кинотеатр-Аниматор) ---
+function setupGlobalModes() {
+  const setMode = (mode) => {
+    state.globalMode = mode;
+    const isEditor = mode === 'editor';
+
+    if (els.btnModeEditor) els.btnModeEditor.classList.toggle('active', isEditor);
+    if (els.btnModeAnimator) els.btnModeAnimator.classList.toggle('active', !isEditor);
+
+    if (els.workspace) els.workspace.style.display = isEditor ? 'flex' : 'none';
+    if (els.animatorView) els.animatorView.style.display = !isEditor ? 'flex' : 'none';
+
+    if (!isEditor) {
+      buildAnimatorTimeline();
+      applyAnimatorBg(state.animator.bgMode);
+      applyAnimatorChatMode(state.animator.chatMode);
+    } else {
+      stopAnimator();
+    }
+  };
+
+  if (els.btnModeEditor) {
+    els.btnModeEditor.addEventListener('click', () => setMode('editor'));
+  }
+  if (els.btnModeAnimator) {
+    els.btnModeAnimator.addEventListener('click', () => setMode('animator'));
+  }
+}
+
+// Словарь русских названий частых звуков Minecraft для субтитров
+const MC_SOUND_NAMES = {
+  'entity.player.levelup': 'Уровень повышен',
+  'entity.experience_orb.pickup': 'Опыт подобран',
+  'entity.item.pickup': 'Предмет подобран',
+  'block.chest.open': 'Сундук открывается',
+  'block.chest.close': 'Сундук закрывается',
+  'entity.villager.ambient': 'Житель бормочет',
+  'entity.villager.yes': 'Житель соглашается',
+  'entity.villager.no': 'Житель отказывается',
+  'entity.lightning_bolt.thunder': 'Удар грома',
+  'entity.generic.explode': 'Взрыв',
+  'block.portal.ambient': 'Портал гудит',
+  'ui.button.click': 'Клик кнопки'
+};
+
+// --- Построение таймлайна катсцены для аниматора ---
+function buildAnimatorTimeline() {
+  const scriptText = els.scriptInput ? els.scriptInput.value : '';
+  const processed = processScriptLines(scriptText);
+  
+  let currentTick = 0;
+  const events = [];
+
+  processed.forEach((item, index) => {
+    if (item.type === 'wait') {
+      currentTick += item.ticks;
+      return;
+    }
+
+    if (item.type === 'command') {
+      // Проверяем, не playsound ли это
+      const soundMatch = item.command.match(/^\/playsound\s+([a-zA-Z0-9_.]+)/i);
+      if (soundMatch) {
+        const soundId = soundMatch[1];
+        events.push({
+          tick: currentTick,
+          type: 'sound',
+          soundId: soundId,
+          label: MC_SOUND_NAMES[soundId] || soundId
+        });
+      } else {
+        events.push({
+          tick: currentTick,
+          type: 'raw_command',
+          command: item.command
+        });
+      }
+      return;
+    }
+
+    if (item.type === 'bossbar') {
+      events.push({
+        tick: currentTick,
+        type: 'bossbar',
+        color: item.color,
+        tokens: item.tokens
+      });
+      return;
+    }
+
+    // Dialogue (title, subtitle, actionbar, chat)
+    if (item.type === 'dialogue') {
+      events.push({
+        tick: currentTick,
+        type: item.tag, // 'title' | 'subtitle' | 'actionbar' | 'chat'
+        tokens: item.tokens,
+        lineIndex: item.lineIndex
+      });
+
+      // Если в настройках включен звук для реплик
+      if (state.playSoundEnabled && item.tag === 'chat' && state.playSoundName) {
+        const snd = state.playSoundName.trim();
+        events.push({
+          tick: currentTick,
+          type: 'sound',
+          soundId: snd,
+          label: MC_SOUND_NAMES[snd] || snd
+        });
+      }
+
+      // Если после реплики нет явного wait, даем базовый шаг времени (35 тиков = 1.75 сек на фразу)
+      const nextItem = processed[index + 1];
+      if (!nextItem || nextItem.type !== 'wait') {
+        currentTick += 35;
+      }
+    }
+  });
+
+  // Завершающая буферная пауза в конце
+  const totalTicks = Math.max(currentTick + 20, 40);
+  state.animator.totalTicks = totalTicks;
+  state.animator.events = events;
+
+  if (els.animTimelineSlider) {
+    els.animTimelineSlider.max = totalTicks;
+    els.animTimelineSlider.value = state.animator.currentTick;
+  }
+
+  updateTimelineLabels();
+}
+
+function updateTimelineLabels() {
+  const curSec = (state.animator.currentTick / 20).toFixed(1);
+  const totSec = (state.animator.totalTicks / 20).toFixed(1);
+
+  if (els.animCurrentTime) {
+    const mins = Math.floor(curSec / 60);
+    const secs = Math.floor(curSec % 60);
+    els.animCurrentTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  if (els.animTotalTime) {
+    const mins = Math.floor(totSec / 60);
+    const secs = Math.floor(totSec % 60);
+    els.animTotalTime.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
+
+  if (els.animTicksBadge) {
+    els.animTicksBadge.textContent = `${state.animator.currentTick} / ${state.animator.totalTicks} тиков`;
+  }
+}
+
+// --- Управление плеером Аниматора ---
+function setupAnimatorControls() {
+  if (els.btnPlayPause) {
+    els.btnPlayPause.addEventListener('click', toggleAnimatorPlay);
+  }
+
+  if (els.btnPlayerStop) {
+    els.btnPlayerStop.addEventListener('click', resetAnimator);
+  }
+
+  if (els.animTimelineSlider) {
+    els.animTimelineSlider.addEventListener('input', (e) => {
+      const targetTick = parseInt(e.target.value, 10);
+      seekAnimatorTo(targetTick);
+    });
+  }
+
+  if (els.animSpeedSelect) {
+    els.animSpeedSelect.addEventListener('change', (e) => {
+      state.animator.playbackSpeed = parseFloat(e.target.value) || 1;
+      if (state.animator.isPlaying) {
+        restartTimer();
+      }
+    });
+  }
+
+  if (els.animChatModeSelect) {
+    els.animChatModeSelect.addEventListener('change', (e) => {
+      state.animator.chatMode = e.target.value;
+      applyAnimatorChatMode(state.animator.chatMode);
+    });
+  }
+
+  if (els.animBgSelect) {
+    els.animBgSelect.addEventListener('change', (e) => {
+      state.animator.bgMode = e.target.value;
+      applyAnimatorBg(state.animator.bgMode);
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (state.globalMode === 'animator' && e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      toggleAnimatorPlay();
+    }
+  });
+}
+
+function applyAnimatorBg(mode) {
+  if (!els.animViewport) return;
+  els.animViewport.classList.remove('bg-world', 'bg-dark', 'bg-black');
+  els.animViewport.classList.add(`bg-${mode}`);
+}
+
+function applyAnimatorChatMode(mode) {
+  if (els.animChatInputBar) {
+    els.animChatInputBar.style.display = (mode === 'open') ? 'flex' : 'none';
+  }
+}
+
+function toggleAnimatorPlay() {
+  if (state.animator.isPlaying) {
+    pauseAnimator();
+  } else {
+    playAnimator();
+  }
+}
+
+function playAnimator() {
+  if (state.animator.currentTick >= state.animator.totalTicks) {
+    resetAnimator();
+  }
+
+  state.animator.isPlaying = true;
+  if (els.btnPlayIcon) els.btnPlayIcon.textContent = '⏸️';
+  if (els.btnPlayText) els.btnPlayText.textContent = 'Пауза';
+
+  restartTimer();
+}
+
+function pauseAnimator() {
+  state.animator.isPlaying = false;
+  if (els.btnPlayIcon) els.btnPlayIcon.textContent = '▶️';
+  if (els.btnPlayText) els.btnPlayText.textContent = 'Старт';
+
+  if (state.animator.timerId) {
+    clearInterval(state.animator.timerId);
+    state.animator.timerId = null;
+  }
+}
+
+function stopAnimator() {
+  pauseAnimator();
+  resetAnimator();
+}
+
+function resetAnimator() {
+  pauseAnimator();
+  state.animator.currentTick = 0;
+  clearAllViewportElements();
+  if (els.animTimelineSlider) els.animTimelineSlider.value = 0;
+  if (els.animStepLabel) els.animStepLabel.textContent = 'Готов к воспроизведению';
+  updateTimelineLabels();
+}
+
+function restartTimer() {
+  if (state.animator.timerId) {
+    clearInterval(state.animator.timerId);
+  }
+  // 1 тик Minecraft = 50 мс
+  const interval = Math.max(15, Math.round(50 / state.animator.playbackSpeed));
+  state.animator.timerId = setInterval(animatorTickStep, interval);
+}
+
+function animatorTickStep() {
+  state.animator.currentTick++;
+  
+  if (els.animTimelineSlider) {
+    els.animTimelineSlider.value = state.animator.currentTick;
+  }
+  updateTimelineLabels();
+
+  // Обрабатываем события, приходящиеся на данный тик
+  renderEventsAtTick(state.animator.currentTick);
+
+  // Очистка / затухание сообщений чата (если закрыт)
+  stepChatFade();
+  // Затухание звуковых субтитров
+  stepSoundSubtitlesFade();
+
+  if (state.animator.currentTick >= state.animator.totalTicks) {
+    pauseAnimator();
+    if (els.animStepLabel) els.animStepLabel.textContent = '🏁 Катсцена завершена';
+  }
+}
+
+function seekAnimatorTo(tick) {
+  state.animator.currentTick = tick;
+  clearAllViewportElements();
+
+  // Воспроизводим события вплоть до этой точки
+  const evs = state.animator.events.filter(e => e.tick <= tick);
+  evs.forEach(ev => {
+    // Для чата добавляем только те, которые произошли недавно (до 100 тиков назад)
+    if (ev.type === 'chat' && (tick - ev.tick) < 100) {
+      displayChatMessage(ev.tokens, 100 - (tick - ev.tick));
+    } else if (ev.type === 'title' && (tick - ev.tick) < 80) {
+      displayTitle(ev.tokens, 80 - (tick - ev.tick));
+    } else if (ev.type === 'subtitle' && (tick - ev.tick) < 80) {
+      displaySubtitle(ev.tokens, 80 - (tick - ev.tick));
+    } else if (ev.type === 'actionbar' && (tick - ev.tick) < 60) {
+      displayActionbar(ev.tokens, 60 - (tick - ev.tick));
+    } else if (ev.type === 'bossbar') {
+      displayBossbar(ev.color, ev.tokens);
+    }
+  });
+
+  updateTimelineLabels();
+}
+
+function clearAllViewportElements() {
+  if (els.animTitleBox) {
+    els.animTitleBox.style.display = 'none';
+    els.animTitleBox.style.opacity = '1';
+  }
+  if (els.animSubtitleBox) {
+    els.animSubtitleBox.style.display = 'none';
+    els.animSubtitleBox.style.opacity = '1';
+  }
+  if (els.animActionbarBox) {
+    els.animActionbarBox.style.display = 'none';
+    els.animActionbarBox.style.opacity = '1';
+  }
+  if (els.animChatMessages) {
+    els.animChatMessages.innerHTML = '';
+  }
+  if (els.animSoundSubtitles) {
+    els.animSoundSubtitles.innerHTML = '';
+  }
+  state.animator.activeChatMessages = [];
+  state.animator.activeSounds = [];
+}
+
+// Отображение событий в конкретный тик
+function renderEventsAtTick(tick) {
+  const currentEvents = state.animator.events.filter(e => e.tick === tick);
+
+  currentEvents.forEach(ev => {
+    if (ev.type === 'title') {
+      displayTitle(ev.tokens, 80);
+      if (els.animStepLabel) els.animStepLabel.textContent = `🎬 [Тайтл]`;
+    } else if (ev.type === 'subtitle') {
+      displaySubtitle(ev.tokens, 80);
+      if (els.animStepLabel) els.animStepLabel.textContent = `📄 [Сабтайтл]`;
+    } else if (ev.type === 'actionbar') {
+      displayActionbar(ev.tokens, 60);
+      if (els.animStepLabel) els.animStepLabel.textContent = `⚡ [Экшнбар]`;
+    } else if (ev.type === 'chat') {
+      displayChatMessage(ev.tokens, 100);
+      if (els.animStepLabel) els.animStepLabel.textContent = `💬 [Чат] Реплика`;
+    } else if (ev.type === 'sound') {
+      displaySoundSubtitle(ev.label, 60);
+    } else if (ev.type === 'bossbar') {
+      displayBossbar(ev.color, ev.tokens);
+    }
+  });
+}
+
+// Показ Title
+function displayTitle(tokens, durationTicks = 80) {
+  if (!els.animTitleBox || !els.animTitleText) return;
+  els.animTitleText.innerHTML = tokensToHtml(tokens);
+  els.animTitleBox.style.display = 'block';
+  els.animTitleBox.style.opacity = '1';
+
+  clearTimeout(els.animTitleBox._timer);
+  els.animTitleBox._timer = setTimeout(() => {
+    els.animTitleBox.style.opacity = '0';
+    setTimeout(() => {
+      if (els.animTitleBox.style.opacity === '0') els.animTitleBox.style.display = 'none';
+    }, 500);
+  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
+}
+
+// Показ Subtitle
+function displaySubtitle(tokens, durationTicks = 80) {
+  if (!els.animSubtitleBox || !els.animSubtitleText) return;
+  els.animSubtitleText.innerHTML = tokensToHtml(tokens);
+  els.animSubtitleBox.style.display = 'block';
+  els.animSubtitleBox.style.opacity = '1';
+
+  clearTimeout(els.animSubtitleBox._timer);
+  els.animSubtitleBox._timer = setTimeout(() => {
+    els.animSubtitleBox.style.opacity = '0';
+    setTimeout(() => {
+      if (els.animSubtitleBox.style.opacity === '0') els.animSubtitleBox.style.display = 'none';
+    }, 500);
+  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
+}
+
+// Показ Actionbar
+function displayActionbar(tokens, durationTicks = 60) {
+  if (!els.animActionbarBox || !els.animActionbarText) return;
+  els.animActionbarText.innerHTML = tokensToHtml(tokens);
+  els.animActionbarBox.style.display = 'block';
+  els.animActionbarBox.style.opacity = '1';
+
+  clearTimeout(els.animActionbarBox._timer);
+  els.animActionbarBox._timer = setTimeout(() => {
+    els.animActionbarBox.style.opacity = '0';
+    setTimeout(() => {
+      if (els.animActionbarBox.style.opacity === '0') els.animActionbarBox.style.display = 'none';
+    }, 400);
+  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
+}
+
+// Показ Bossbar
+function displayBossbar(color, tokens) {
+  if (!els.animBossbarWrap || !els.animBossbarTitle || !els.animBossbarBar) return;
+  els.animBossbarTitle.innerHTML = tokensToHtml(tokens);
+  els.animBossbarBar.className = `anim-bossbar-bar color-${color || 'purple'}`;
+  els.animBossbarWrap.style.display = 'flex';
+}
+
+// Показ сообщения в чате Minecraft
+function displayChatMessage(tokens, remainingTicks = 100) {
+  if (!els.animChatMessages) return;
+
+  const lineEl = document.createElement('div');
+  lineEl.className = 'anim-chat-line';
+  lineEl.innerHTML = tokensToHtml(tokens);
+  els.animChatMessages.appendChild(lineEl);
+
+  state.animator.activeChatMessages.push({
+    el: lineEl,
+    remainingTicks: remainingTicks
+  });
+
+  // Ограничиваем историю чата 15 последними строками
+  if (els.animChatMessages.children.length > 15) {
+    els.animChatMessages.removeChild(els.animChatMessages.firstChild);
+  }
+}
+
+// Шаг затухания чата
+function stepChatFade() {
+  if (state.animator.chatMode === 'open') return; // В открытом чате реплики не тают
+
+  for (let i = state.animator.activeChatMessages.length - 1; i >= 0; i--) {
+    const item = state.animator.activeChatMessages[i];
+    item.remainingTicks--;
+
+    if (item.remainingTicks <= 20 && !item.el.classList.contains('fading')) {
+      item.el.classList.add('fading');
+    }
+
+    if (item.remainingTicks <= 0) {
+      if (item.el.parentNode) {
+        item.el.parentNode.removeChild(item.el);
+      }
+      state.animator.activeChatMessages.splice(i, 1);
+    }
+  }
+}
+
+// Показ субтитра звука Minecraft
+function displaySoundSubtitle(label, remainingTicks = 60) {
+  if (!els.animSoundSubtitles) return;
+
+  const chip = document.createElement('div');
+  chip.className = 'anim-sound-chip';
+  chip.innerHTML = `
+    <span class=\"anim-sound-icon\">🔔</span>
+    <span class=\"anim-sound-text\">${escapeHtml(label)}</span>
+    <span class=\"anim-sound-arrow\">&gt;</span>
+  `;
+  els.animSoundSubtitles.appendChild(chip);
+
+  state.animator.activeSounds.push({
+    el: chip,
+    remainingTicks: remainingTicks
+  });
+}
+
+function stepSoundSubtitlesFade() {
+  for (let i = state.animator.activeSounds.length - 1; i >= 0; i--) {
+    const item = state.animator.activeSounds[i];
+    item.remainingTicks--;
+
+    if (item.remainingTicks <= 15 && !item.el.classList.contains('fading')) {
+      item.el.classList.add('fading');
+    }
+
+    if (item.remainingTicks <= 0) {
+      if (item.el.parentNode) {
+        item.el.parentNode.removeChild(item.el);
+      }
+      state.animator.activeSounds.splice(i, 1);
+    }
+  }
 }
 
 // --- Анимация Minecraft Obfuscated (&k) ---
