@@ -1376,8 +1376,8 @@ body {
   position: absolute;
   left: 24px;
   bottom: 84px;
-  width: 420px;
-  max-width: 42vw;
+  width: 440px;
+  max-width: 45vw;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -1385,28 +1385,49 @@ body {
   z-index: 15;
 }
 
+.anim-chat-wrap.chat-open {
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
+  padding: 4px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
 .anim-chat-messages {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-height: 380px;
-  overflow: hidden;
+  gap: 3px;
+  max-height: 220px;
+  overflow-y: hidden;
   justify-content: flex-end;
+}
+
+.anim-chat-wrap.chat-open .anim-chat-messages {
+  overflow-y: auto;
+  max-height: 320px;
+  pointer-events: auto;
 }
 
 .anim-chat-line {
   font-family: var(--font-pixel);
-  font-size: 15px;
-  line-height: 22px;
-  padding: 3px 8px;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 2px 6px;
   border-radius: 3px;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.5);
   color: #fff;
   text-shadow: 2px 2px 0px #151515;
   width: fit-content;
   max-width: 100%;
   word-break: break-word;
   transition: opacity 1s ease;
+}
+
+.anim-chat-wrap.chat-open .anim-chat-line {
+  background: transparent;
+  padding: 1px 4px;
+  opacity: 1 !important;
 }
 
 .anim-chat-line.fading {

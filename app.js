@@ -213,6 +213,7 @@ function initDomRefs() {
     btnPlayPause: document.getElementById('btn-play-pause'),
     btnPlayIcon: document.getElementById('btn-play-icon'),
     btnPlayText: document.getElementById('btn-play-text'),
+    btnPlayerStepNext: document.getElementById('btn-player-step-next'),
     btnPlayerStop: document.getElementById('btn-player-stop'),
     animCurrentTime: document.getElementById('anim-current-time'),
     animTotalTime: document.getElementById('anim-total-time'),
@@ -970,8 +971,8 @@ function generateOneCommandBox(processed, selector) {
         command: cmd,
         delayBefore: pendingDelay
       });
-      // По умолчанию между репликами даем 25 тиков, если задержка не указана
-      pendingDelay = 25;
+      // В Minecraft повторители ставятся ТОЛЬКО при явных тегах [wait: N]!
+      pendingDelay = 0;
     }
   });
 
@@ -1752,12 +1753,7 @@ function buildAnimatorTimeline() {
           label: MC_SOUND_NAMES[snd] || snd
         });
       }
-
-      // Если после реплики нет явного wait, даем базовый шаг времени (35 тиков = 1.75 сек на фразу)
-      const nextItem = processed[index + 1];
-      if (!nextItem || nextItem.type !== 'wait') {
-        currentTick += 35;
-      }
+      // Точное отражение Minecraft: время не накручивается, если нет явного [wait: N]!
     }
   });
 
@@ -1799,6 +1795,10 @@ function updateTimelineLabels() {
 function setupAnimatorControls() {
   if (els.btnPlayPause) {
     els.btnPlayPause.addEventListener('click', toggleAnimatorPlay);
+  }
+
+  if (els.btnPlayerStepNext) {
+    els.btnPlayerStepNext.addEventListener('click', stepAnimatorNext);
   }
 
   if (els.btnPlayerStop) {
@@ -1850,8 +1850,33 @@ function applyAnimatorBg(mode) {
 }
 
 function applyAnimatorChatMode(mode) {
+  const isOpen = mode === 'open';
+  if (els.animChatWrap) {
+    els.animChatWrap.classList.toggle('chat-open', isOpen);
+  }
   if (els.animChatInputBar) {
-    els.animChatInputBar.style.display = (mode === 'open') ? 'flex' : 'none';
+    els.animChatInputBar.style.display = isOpen ? 'flex' : 'none';
+  }
+  if (isOpen && els.animChatMessages) {
+    // При открытии чата прокручиваем в самый низ
+    els.animChatMessages.scrollTop = els.animChatMessages.scrollHeight;
+  }
+}
+
+// Пошаговый режим отладки (Дебаггер): переход к следующему событию сценария
+function stepAnimatorNext() {
+  pauseAnimator();
+
+  const curTick = state.animator.currentTick;
+  // Ищем следующее событие в сценарии по времени
+  const nextEvent = state.animator.events.find(e => e.tick > curTick);
+
+  if (nextEvent) {
+    seekAnimatorTo(nextEvent.tick);
+  } else if (curTick < state.animator.totalTicks) {
+    seekAnimatorTo(state.animator.totalTicks);
+  } else {
+    resetAnimator();
   }
 }
 
@@ -2073,10 +2098,15 @@ function displayChatMessage(tokens, remainingTicks = 100) {
     remainingTicks: remainingTicks
   });
 
-  // Ограничиваем историю чата 15 последними строками
-  if (els.animChatMessages.children.length > 15) {
+  // В закрытом чате Minecraft на экране помещается до 7 строк (~половина экрана)
+  // В открытом чате храним до 100 сообщений с возможностью скролла
+  const maxLines = (state.animator.chatMode === 'open') ? 100 : 7;
+  while (els.animChatMessages.children.length > maxLines) {
     els.animChatMessages.removeChild(els.animChatMessages.firstChild);
   }
+
+  // Автоскролл вниз при поступлении новых реплик
+  els.animChatMessages.scrollTop = els.animChatMessages.scrollHeight;
 }
 
 // Шаг затухания чата
