@@ -4323,6 +4323,12 @@ function playAnimator() {
     resetAnimator();
   }
 
+  // Если запуск происходит с нулевого тика (с самого начала),
+  // сразу же обрабатываем события тика 0 (title, subtitle, звуки на старте)!
+  if (state.animator.currentTick === 0) {
+    renderEventsAtTick(0);
+  }
+
   state.animator.isPlaying = true;
   if (els.btnPlayIcon) els.btnPlayIcon.textContent = '⏸️';
   if (els.btnPlayText) els.btnPlayText.textContent = 'Пауза';
@@ -4438,13 +4444,18 @@ function clearAllViewportElements() {
 function renderEventsAtTick(tick) {
   const currentEvents = state.animator.events.filter(e => e.tick === tick);
 
-  currentEvents.forEach(ev => {
+  // Сначала обрабатываем subtitle, если он есть в этот тик, чтобы зарегистрировать его до title!
+  const subEvents = currentEvents.filter(e => e.type === 'subtitle');
+  subEvents.forEach(ev => {
+    displaySubtitle(ev.tokens);
+    if (els.animStepLabel) els.animStepLabel.textContent = `📄 [Сабтайтл]`;
+  });
+
+  const otherEvents = currentEvents.filter(e => e.type !== 'subtitle');
+  otherEvents.forEach(ev => {
     if (ev.type === 'title') {
       displayTitle(ev.tokens, 80);
       if (els.animStepLabel) els.animStepLabel.textContent = `🎬 [Тайтл]`;
-    } else if (ev.type === 'subtitle') {
-      displaySubtitle(ev.tokens, 80);
-      if (els.animStepLabel) els.animStepLabel.textContent = `📄 [Сабтайтл]`;
     } else if (ev.type === 'actionbar') {
       displayActionbar(ev.tokens, 60);
       if (els.animStepLabel) els.animStepLabel.textContent = `⚡ [Экшнбар]`;
