@@ -407,6 +407,47 @@ body {
   user-select: none;
   overflow: hidden;
   white-space: pre;
+  z-index: 2;
+}
+
+/* Фоновый слой подсветки строк сценария (комфортность чтения) */
+.editor-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 44px;
+  right: 0;
+  bottom: 0;
+  padding: 12px 14px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 22px;
+  white-space: pre;
+}
+
+.editor-hl-line {
+  height: 22px;
+  width: 100%;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  box-sizing: border-box;
+  transition: background 0.15s ease;
+}
+
+.editor-hl-badge {
+  font-size: 10px;
+  line-height: 14px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
 #script-input {
@@ -423,6 +464,8 @@ body {
   white-space: pre;
   tab-size: 2;
   overflow-y: auto;
+  position: relative;
+  z-index: 2;
 }
 
 #script-input::placeholder {

@@ -123,6 +123,7 @@ function initDomRefs() {
     autocompletePopup: document.getElementById('autocomplete-popup'),
     chkEditorHints: document.getElementById('chk-editor-hints'),
     lineNumbers: document.getElementById('line-numbers'),
+    editorHighlightLayer: document.getElementById('editor-highlight-layer'),
     lineCountBadge: document.getElementById('line-count-badge'),
     charCountBadge: document.getElementById('char-count-badge'),
     commandCountBadge: document.getElementById('command-count-badge'),
@@ -823,6 +824,110 @@ function processScriptLines(text) {
   return results;
 }
 
+// --- Подсветка комфортности чтения для строк с [wait: X] ---
+function updateReadingComfortHighlight(lines, processed) {
+  if (!els.editorHighlightLayer) return;
+
+  // Очистка или пустое состояние
+  if (!lines || lines.length === 0) {
+    els.editorHighlightLayer.innerHTML = '';
+    return;
+  }
+
+  // Создаем карту: номер строки (1-based) -> processed item
+  const lineToItem = new Map();
+  processed.forEach(item => {
+    lineToItem.set(item.lineIndex, item);
+  });
+
+  const htmlRows = [];
+
+  for (let idx = 0; idx < lines.length; idx++) {
+    const lineNum = idx + 1;
+    const item = lineToItem.get(lineNum);
+
+    if (!item || item.type !== 'wait') {
+      // Обычная строка без подсветки
+      htmlRows.push('<div class="editor-hl-line"></div>');
+      continue;
+    }
+
+    // Ищем предыдущую реплику / текст (dialogue или bossbar), чтобы узнать объём текста
+    let prevTextLength = 0;
+    let prevItemType = '';
+
+    for (let p = lineNum - 2; p >= 0; p--) {
+      const prevLineNum = p + 1;
+      const prevItem = lineToItem.get(prevLineNum);
+      if (prevItem && (prevItem.type === 'dialogue' || prevItem.type === 'bossbar')) {
+        // Вычисляем чистую длину текста без служебных кодов
+        const cleanText = prevItem.tokens ? prevItem.tokens.map(t => t.text || '').join('') : '';
+        prevTextLength = cleanText.trim().length;
+        prevItemType = prevItem.type;
+        break;
+      }
+    }
+
+    if (prevTextLength === 0) {
+      // До wait не было реплики (например, wait в начале файла или после команды)
+      htmlRows.push('<div class="editor-hl-line"></div>');
+      continue;
+    }
+
+    // Расчёт идеального времени:
+    // Базовое время на реакцию/фокус глаза: ~12 тиков (0.6с)
+    // Средняя скорость чтения диалогов в играх: ~2.5 тика на символ (~8 символов в секунду)
+    const idealTicks = Math.round(12 + (prevTextLength * 2.3));
+    const actualTicks = item.ticks;
+
+    // Считаем коэффициент отклонения от идеала: ratio = actual / ideal
+    const ratio = actualTicks / idealTicks;
+
+    let bgStyle = '';
+    let badgeHtml = '';
+
+    // Если задержка около идеальной (в коридоре 0.85 .. 1.25) — подсветка выключена!
+    if (ratio >= 0.85 && ratio <= 1.25) {
+      bgStyle = ''; // подсветка отключена, всё идеально
+    } else {
+      let severity = 0; // 0..1 (отклонение от идеала)
+      let isFast = false;
+
+      if (ratio < 0.85) {
+        // Слишком быстро: игрок не успеет дочитать
+        isFast = true;
+        severity = Math.min(1, (0.85 - ratio) / 0.6); // 0..1
+      } else {
+        // Слишком долго: игрок будет скучать в ожидании следующей реплики
+        isFast = false;
+        severity = Math.min(1, (ratio - 1.25) / 1.5); // 0..1
+      }
+
+      // Цветовая интерполяция:
+      // от мягкого оранжевого rgba(255, 170, 0, 0.15) до насыщенного красного rgba(255, 60, 60, 0.35)
+      const red = 255;
+      const green = Math.round(170 * (1 - severity));
+      const blue = Math.round(20 * (1 - severity));
+      const alpha = (0.12 + (severity * 0.22)).toFixed(2);
+      const borderAlpha = (0.3 + (severity * 0.4)).toFixed(2);
+
+      bgStyle = `background: rgba(${red}, ${green}, ${blue}, ${alpha}); border-left: 3px solid rgba(${red}, ${green}, ${blue}, ${borderAlpha});`;
+
+      const idealSec = (idealTicks / 20).toFixed(1);
+      const labelText = isFast
+        ? `⚠️ Слишком быстро (нужно ~${idealTicks}т / ${idealSec}с)`
+        : `⏳ Долгая пауза (хватит ~${idealTicks}т / ${idealSec}с)`;
+
+      const badgeColor = severity > 0.6 ? '#ff5555' : '#ffaa00';
+      badgeHtml = `<span class="editor-hl-badge" style="background: rgba(0,0,0,0.7); color: ${badgeColor}; border: 1px solid ${badgeColor}55;">${labelText}</span>`;
+    }
+
+    htmlRows.push(`<div class="editor-hl-line" style="${bgStyle}">${badgeHtml}</div>`);
+  }
+
+  els.editorHighlightLayer.innerHTML = htmlRows.join('');
+}
+
 // --- Главное обновление редактора ---
 function updateEditor() {
   const scriptText = els.scriptInput ? els.scriptInput.value : '';
@@ -928,6 +1033,9 @@ function updateEditor() {
       els.exportCodeOutput.textContent = commandLines.join('\n');
     }
   }
+
+  // Обновление слоя подсветки задержек чтения [wait]
+  updateReadingComfortHighlight(lines, processed);
 
   saveToLocalStorage();
 }
@@ -1142,6 +1250,7 @@ function setupEventListeners() {
   if (els.scriptInput) {
     els.scriptInput.addEventListener('scroll', () => {
       if (els.lineNumbers) els.lineNumbers.scrollTop = els.scriptInput.scrollTop;
+      if (els.editorHighlightLayer) els.editorHighlightLayer.scrollTop = els.scriptInput.scrollTop;
     });
 
     els.scriptInput.addEventListener('focus', () => {
