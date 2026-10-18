@@ -150,6 +150,7 @@ function initDomRefs() {
     modalHelpBackdrop: document.getElementById('modal-help-backdrop'),
     btnCloseHelp: document.getElementById('btn-close-help'),
     btnOkHelp: document.getElementById('btn-ok-help'),
+    btnCopyAiRules: document.getElementById('btn-copy-ai-rules'),
     btnExportProject: document.getElementById('btn-export-project'),
     fileImportProject: document.getElementById('file-import-project'),
     btnClearAll: document.getElementById('btn-clear-all'),
@@ -1475,6 +1476,51 @@ function setupHelpModal() {
   if (els.btnCloseHelp) els.btnCloseHelp.addEventListener('click', closeHelp);
   if (els.btnOkHelp) els.btnOkHelp.addEventListener('click', closeHelp);
 
+  if (els.btnCopyAiRules) {
+    els.btnCopyAiRules.addEventListener('click', async () => {
+      const charTriggers = state.characters.map(c => `"${c.trigger}" (${c.displayName || c.trigger})`).join(', ');
+      const aiPrompt = `Ты — сценарист диалогов и квестов для Minecraft в формате FluffyLore.
+
+Правила разметки сценария:
+1. Реплика персонажа: [Имя]: [Текст]
+   Например: "Сенко: Привет, путник!", "Широ: Смотри, что у меня есть!"
+   (Настроенные персонажи проекта: ${charTriggers || 'любые'})
+2. Действие от третьего лица: *действие*
+   Например: "*аккуратно подаёт чашечку горячего чая*"
+3. Заголовки и экранные сообщения (помещаются в начале строки):
+   - [title] Текст — большой заголовок по центру экрана
+   - [subtitle] Текст — подзаголовок (всегда пишется ПЕРЕД [title], так как в Minecraft subtitle привязан к title)
+   - [actionbar] Текст — строка над хотбаром
+   - [bossbar: red|purple|blue|green|yellow|white] Текст — полоска босса сверху
+   - [chat] Текст — обычный вывод в чат
+4. Паузы и тайминги (в тиках, 20 тиков = 1 секунда):
+   - [wait: 20] — пауза в 1 секунду
+   - [wait: 40] — пауза в 2 секунды
+5. Прямые команды Minecraft (со слэшем / в начале строки):
+   - /playsound entity.player.levelup master @a ~ ~ ~ 1 1
+   - /particle heart ~ ~1.5 ~ 0.5 0.5 0.5 0.05 10
+6. Цветовые коды и стили прямо в тексте:
+   - Цвета: &0..&f (&6 — золото, &e — жёлтый, &b — голубой, &a — зелёный, &c — красный, &f — белый)
+   - Стили: &l — жирный, &o — курсив, &n — подчеркивание, &k — магия, &r — сброс
+   - HEX-цвета: &#ffaa00 (24-битный кастомный цвет)
+
+Напиши атмосферный, красивый диалог с учётом этих правил.`;
+
+      try {
+        await navigator.clipboard.writeText(aiPrompt);
+        showCopyToast('📋 Правила для AI скопированы в буфер!');
+      } catch (err) {
+        const ta = document.createElement('textarea');
+        ta.value = aiPrompt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showCopyToast('📋 Правила для AI скопированы!');
+      }
+    });
+  }
+
   if (els.modalHelpBackdrop) {
     els.modalHelpBackdrop.addEventListener('click', (e) => {
       if (e.target === els.modalHelpBackdrop) closeHelp();
@@ -1968,8 +2014,8 @@ function seekAnimatorTo(tick) {
       displayChatMessage(ev.tokens, 100 - (tick - ev.tick));
     } else if (ev.type === 'title' && (tick - ev.tick) < 80) {
       displayTitle(ev.tokens, 80 - (tick - ev.tick));
-    } else if (ev.type === 'subtitle' && (tick - ev.tick) < 80) {
-      displaySubtitle(ev.tokens, 80 - (tick - ev.tick));
+    } else if (ev.type === 'subtitle') {
+      displaySubtitle(ev.tokens);
     } else if (ev.type === 'actionbar' && (tick - ev.tick) < 60) {
       displayActionbar(ev.tokens, 60 - (tick - ev.tick));
     } else if (ev.type === 'bossbar') {
@@ -2001,6 +2047,7 @@ function clearAllViewportElements() {
   }
   state.animator.activeChatMessages = [];
   state.animator.activeSounds = [];
+  state.animator.pendingSubtitleTokens = null;
 }
 
 // Отображение событий в конкретный тик
@@ -2035,29 +2082,47 @@ function displayTitle(tokens, durationTicks = 80) {
   els.animTitleBox.style.display = 'block';
   els.animTitleBox.style.opacity = '1';
 
+  // Если был зарегистрирован отложенный сабтайтл, показываем его вместе с title!
+  if (state.animator.pendingSubtitleTokens) {
+    displayActiveSubtitle(state.animator.pendingSubtitleTokens);
+  }
+
   clearTimeout(els.animTitleBox._timer);
   els.animTitleBox._timer = setTimeout(() => {
+    // В Minecraft сабтайтл гаснет строго вместе с title!
     els.animTitleBox.style.opacity = '0';
+    if (els.animSubtitleBox) els.animSubtitleBox.style.opacity = '0';
+
     setTimeout(() => {
       if (els.animTitleBox.style.opacity === '0') els.animTitleBox.style.display = 'none';
+      if (els.animSubtitleBox && els.animSubtitleBox.style.opacity === '0') {
+        els.animSubtitleBox.style.display = 'none';
+      }
+      state.animator.pendingSubtitleTokens = null;
     }, 500);
   }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
 }
 
-// Показ Subtitle
-function displaySubtitle(tokens, durationTicks = 80) {
+// Регистрация / показ Subtitle (по правилам Minecraft)
+function displaySubtitle(tokens) {
+  if (!els.animSubtitleBox || !els.animSubtitleText) return;
+
+  // В Minecraft: если title сейчас активен на экране, обновляем сабтайтл под ним!
+  const isTitleActive = els.animTitleBox && els.animTitleBox.style.display !== 'none' && els.animTitleBox.style.opacity !== '0';
+
+  if (isTitleActive) {
+    displayActiveSubtitle(tokens);
+  } else {
+    // Если title ещё не был вызван, запоминаем subtitle, чтобы он появился в момент вызова title
+    state.animator.pendingSubtitleTokens = tokens;
+  }
+}
+
+function displayActiveSubtitle(tokens) {
   if (!els.animSubtitleBox || !els.animSubtitleText) return;
   els.animSubtitleText.innerHTML = tokensToHtml(tokens);
   els.animSubtitleBox.style.display = 'block';
   els.animSubtitleBox.style.opacity = '1';
-
-  clearTimeout(els.animSubtitleBox._timer);
-  els.animSubtitleBox._timer = setTimeout(() => {
-    els.animSubtitleBox.style.opacity = '0';
-    setTimeout(() => {
-      if (els.animSubtitleBox.style.opacity === '0') els.animSubtitleBox.style.display = 'none';
-    }, 500);
-  }, Math.max(100, durationTicks * 50 / state.animator.playbackSpeed));
 }
 
 // Показ Actionbar
